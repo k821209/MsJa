@@ -1,10 +1,19 @@
+# Database (personal data)
 data/persona.db
 data/*.db-journal
 data/*.db-wal
+data/*.db-shm
+
+# Python
 __pycache__/
 *.pyc
 .venv/
 dist/
 *.egg-info/
+
+# Claude Code local config (contains absolute paths)
 .claude/settings.local.json
+.mcp.json
+
+# Environment
 .env

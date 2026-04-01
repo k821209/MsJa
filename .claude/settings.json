@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/yangjaekang/works/deevo.ai.persona && python -m hooks.session_start",
+            "command": ".venv/bin/python -m hooks.session_start",
             "timeout": 5000
           }
         ]
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/yangjaekang/works/deevo.ai.persona && python -m hooks.post_interaction",
+            "command": ".venv/bin/python -m hooks.post_interaction",
             "timeout": 5000
           }
         ]
@@ -38,18 +38,11 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /Users/yangjaekang/works/deevo.ai.persona && python -m hooks.reflection_check",
+            "command": ".venv/bin/python -m hooks.reflection_check",
             "timeout": 3000
           }
         ]
       }
     ]
-  },
-  "mcpServers": {
-    "persona": {
-      "command": "python",
-      "args": ["-m", "src.mcp_server"],
-      "cwd": "/Users/yangjaekang/works/deevo.ai.persona"
-    }
   }
 }

@@ -26,7 +26,7 @@ from src.reflection import (
 )
 from src.signals import record_signal as _record_signal
 
-mcp = FastMCP("persona", description="Private AI Secretary — Persona & Memory System")
+mcp = FastMCP("persona")
 
 
 def _parse_tags(tags: str | None) -> list[str] | None:
@@ -106,7 +106,15 @@ def record_signal(
     direction: float | None = None,
     magnitude: float = 0.5,
 ) -> dict[str, Any]:
-    """Record an evolution signal (user_feedback, implicit_cue, outcome, correction)."""
+    """Record an evolution signal.
+
+    Args:
+        signal_type: One of 'user_feedback', 'implicit_cue', 'outcome', 'correction'
+        evidence: Description of what happened (the observed behavior or feedback)
+        dimension: Which trait this relates to (e.g. 'formality', 'verbosity')
+        direction: -1.0 (decrease) to +1.0 (increase)
+        magnitude: Signal strength 0.0-1.0 (default 0.5)
+    """
     conn = init_db()
     try:
         signal_id = _record_signal(
@@ -141,22 +149,22 @@ def trigger_reflection(trigger_type: str = "manual") -> dict[str, Any]:
     conn = init_db()
     try:
         reflection_context = run_reflection(conn, trigger_type=trigger_type)
-        if reflection_context is None:
-            return {"status": "skipped", "reason": "No pending signals to reflect on"}
+        if reflection_context.get("skipped") or reflection_context.get("reflection_id") is None:
+            return {"status": "skipped", "reason": "Threshold not met or no pending signals"}
 
         client = anthropic.Anthropic()
         response = client.messages.create(
             model="claude-sonnet-4-20250514",
             max_tokens=4096,
             system="You are a persona reflection engine. Analyze the signals and respond with JSON only.",
-            messages=[{"role": "user", "content": json.dumps(reflection_context["prompt"])}],
+            messages=[{"role": "user", "content": reflection_context["prompt"]}],
         )
 
-        analysis_text = response.content[0].text
+        llm_response = response.content[0].text
         result = complete_reflection(
             conn,
             reflection_id=reflection_context["reflection_id"],
-            analysis_text=analysis_text,
+            llm_response=llm_response,
         )
         return {"status": "completed", "reflection_id": reflection_context["reflection_id"], "summary": result}
     except Exception as e:
@@ -223,4 +231,4 @@ def add_rule(
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport="stdio")
