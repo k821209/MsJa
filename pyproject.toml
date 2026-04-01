@@ -1,0 +1,27 @@
+[project]
+name = "deevo-ai-persona"
+version = "0.1.0"
+description = "Private AI Secretary with self-evolving persona — Claude Code harness"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.52.0",
+    "mcp>=1.0.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+embeddings = [
+    "numpy>=1.26",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

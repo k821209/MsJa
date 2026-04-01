@@ -1,0 +1,55 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__persona__*",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebSearch",
+      "WebFetch"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/yangjaekang/works/deevo.ai.persona && python -m hooks.session_start",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/yangjaekang/works/deevo.ai.persona && python -m hooks.post_interaction",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "mcp__persona__record_signal",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/yangjaekang/works/deevo.ai.persona && python -m hooks.reflection_check",
+            "timeout": 3000
+          }
+        ]
+      }
+    ]
+  },
+  "mcpServers": {
+    "persona": {
+      "command": "python",
+      "args": ["-m", "src.mcp_server"],
+      "cwd": "/Users/yangjaekang/works/deevo.ai.persona"
+    }
+  }
+}

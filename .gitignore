@@ -1,0 +1,10 @@
+data/persona.db
+data/*.db-journal
+data/*.db-wal
+__pycache__/
+*.pyc
+.venv/
+dist/
+*.egg-info/
+.claude/settings.local.json
+.env
