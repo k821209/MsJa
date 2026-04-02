@@ -437,19 +437,41 @@ async def ws_terminal(websocket: WebSocket):
     fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     async def read_pty():
-        """Read from PTY and send to WebSocket."""
-        loop = asyncio.get_event_loop()
+        """Read from PTY and send to WebSocket with buffering.
+
+        Collects output over a short window and sends in one batch
+        to avoid the flickering redraw effect with TUI apps like Claude Code.
+        """
         try:
             while True:
-                await asyncio.sleep(0.01)
+                # Wait for data to be available
+                await asyncio.sleep(0.005)
+                buf = bytearray()
                 try:
-                    data = os.read(master_fd, 4096)
-                    if data:
-                        await websocket.send_text(data.decode("utf-8", errors="replace"))
-                except OSError:
-                    await asyncio.sleep(0.05)
-                except BlockingIOError:
+                    # Drain all available data
+                    while True:
+                        chunk = os.read(master_fd, 16384)
+                        if chunk:
+                            buf.extend(chunk)
+                        else:
+                            break
+                except (OSError, BlockingIOError):
                     pass
+
+                if buf:
+                    # Small delay to collect more data from burst writes
+                    await asyncio.sleep(0.015)
+                    try:
+                        while True:
+                            chunk = os.read(master_fd, 16384)
+                            if chunk:
+                                buf.extend(chunk)
+                            else:
+                                break
+                    except (OSError, BlockingIOError):
+                        pass
+
+                    await websocket.send_bytes(buf)
         except Exception:
             pass
 

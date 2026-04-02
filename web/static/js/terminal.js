@@ -108,8 +108,35 @@ function connectWebSocket() {
     }, 150);
   };
 
+  // Buffer incoming data and write in animation frames to reduce flicker
+  let writeBuf = [];
+  let writeScheduled = false;
+
+  function flushWrites() {
+    if (writeBuf.length > 0 && term) {
+      const combined = writeBuf.join('');
+      writeBuf = [];
+      term.write(combined);
+    }
+    writeScheduled = false;
+  }
+
   ws.onmessage = (event) => {
-    term.write(event.data);
+    if (event.data instanceof Blob) {
+      event.data.text().then(text => {
+        writeBuf.push(text);
+        if (!writeScheduled) {
+          writeScheduled = true;
+          requestAnimationFrame(flushWrites);
+        }
+      });
+    } else {
+      writeBuf.push(event.data);
+      if (!writeScheduled) {
+        writeScheduled = true;
+        requestAnimationFrame(flushWrites);
+      }
+    }
   };
 
   ws.onclose = () => {
