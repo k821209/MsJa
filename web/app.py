@@ -1,14 +1,21 @@
-"""Deevo companion web UI — visual dashboard for persona, images, documents."""
+"""Deevo companion web UI — visual dashboard for persona, images, documents, terminal."""
 
 from __future__ import annotations
 
+import asyncio
+import fcntl
 import json
+import os
+import pty
+import select
 import shutil
+import struct
 import sys
+import termios
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -336,6 +343,87 @@ async def api_doc_versions(doc_id: int):
         return _get_doc_versions(conn, doc_id)
     finally:
         conn.close()
+
+
+# ── WebSocket Terminal (PTY) ───────────────────────────────────
+
+
+def _set_pty_size(fd: int, cols: int, rows: int) -> None:
+    """Set the PTY window size."""
+    winsize = struct.pack("HHHH", rows, cols, 0, 0)
+    fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
+
+
+@app.websocket("/ws/terminal")
+async def ws_terminal(websocket: WebSocket):
+    await websocket.accept()
+
+    # Spawn shell with PTY
+    master_fd, slave_fd = pty.openpty()
+
+    env = os.environ.copy()
+    env["TERM"] = "xterm-256color"
+    env["COLORTERM"] = "truecolor"
+
+    pid = os.fork()
+    if pid == 0:
+        # Child — become the shell
+        os.close(master_fd)
+        os.setsid()
+        fcntl.ioctl(slave_fd, termios.TIOCSCTTY, 0)
+        os.dup2(slave_fd, 0)
+        os.dup2(slave_fd, 1)
+        os.dup2(slave_fd, 2)
+        os.close(slave_fd)
+        shell = os.environ.get("SHELL", "/bin/zsh")
+        os.chdir(str(PROJECT_ROOT))
+        os.execvpe(shell, [shell, "-l"], env)
+
+    # Parent — relay between WebSocket and PTY
+    os.close(slave_fd)
+
+    # Make master_fd non-blocking
+    flags = fcntl.fcntl(master_fd, fcntl.F_GETFL)
+    fcntl.fcntl(master_fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
+    async def read_pty():
+        """Read from PTY and send to WebSocket."""
+        loop = asyncio.get_event_loop()
+        try:
+            while True:
+                await asyncio.sleep(0.01)
+                try:
+                    data = os.read(master_fd, 4096)
+                    if data:
+                        await websocket.send_text(data.decode("utf-8", errors="replace"))
+                except OSError:
+                    await asyncio.sleep(0.05)
+                except BlockingIOError:
+                    pass
+        except Exception:
+            pass
+
+    reader_task = asyncio.create_task(read_pty())
+
+    try:
+        while True:
+            msg = await websocket.receive_text()
+            payload = json.loads(msg)
+
+            if payload["type"] == "input":
+                os.write(master_fd, payload["data"].encode("utf-8"))
+            elif payload["type"] == "resize":
+                _set_pty_size(master_fd, payload["cols"], payload["rows"])
+    except (WebSocketDisconnect, Exception):
+        pass
+    finally:
+        reader_task.cancel()
+        os.close(master_fd)
+        try:
+            os.kill(pid, 9)
+            os.waitpid(pid, 0)
+        except OSError:
+            pass
 
 
 if __name__ == "__main__":

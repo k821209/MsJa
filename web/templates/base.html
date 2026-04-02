@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Deevo{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm/css/xterm.min.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit/lib/addon-fit.min.js"></script>
 </head>
 <body>
   <nav class="sidebar">
@@ -16,11 +19,33 @@
     <a href="/memories" class="nav-item {% block nav_memories %}{% endblock %}">Memories</a>
     <a href="/documents" class="nav-item {% block nav_documents %}{% endblock %}">Documents</a>
     <a href="/reflections" class="nav-item {% block nav_reflections %}{% endblock %}">Reflections</a>
+    <div class="sidebar-spacer"></div>
+    <button class="nav-item terminal-toggle" onclick="toggleTerminal()">
+      <span id="term-icon">▶</span> Terminal
+    </button>
   </nav>
-  <main class="content">
-    {% block content %}{% endblock %}
-  </main>
+
+  <div class="main-wrapper">
+    <main class="content" id="main-content">
+      {% block content %}{% endblock %}
+    </main>
+
+    <!-- Terminal panel -->
+    <aside class="terminal-panel hidden" id="terminal-panel">
+      <div class="terminal-header">
+        <span>Terminal</span>
+        <div class="terminal-actions">
+          <button class="btn-sm" onclick="newTerminal()">new</button>
+          <button class="btn-sm" onclick="runClaude()">claude</button>
+          <button class="btn-sm" onclick="toggleTerminal()">✕</button>
+        </div>
+      </div>
+      <div id="terminal-container"></div>
+    </aside>
+  </div>
+
   <script src="/static/js/main.js"></script>
+  <script src="/static/js/terminal.js"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>
