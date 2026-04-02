@@ -330,22 +330,23 @@ async def api_delete_memory(mem_id: int):
 
 @app.post("/api/upload/image")
 async def upload_image(file: UploadFile = File(...)):
-    dest = UPLOADS_DIR / file.filename
+    dest = PROJECT_ROOT / "persona" / "avatar" / file.filename
+    dest.parent.mkdir(parents=True, exist_ok=True)
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
     # Register in persona_images DB
-    file_path = f"web/static/uploads/{file.filename}"
+    file_path = f"persona/avatar/{file.filename}"
     label = Path(file.filename).stem
     conn = _conn()
     try:
         conn.execute(
             "INSERT INTO persona_images (image_type, label, file_path, description) VALUES (?, ?, ?, ?)",
-            ("uploaded", label, file_path, f"Uploaded via web dashboard"),
+            ("uploaded", label, file_path, "Uploaded via web dashboard"),
         )
         conn.commit()
     finally:
         conn.close()
-    return {"path": f"/static/uploads/{file.filename}"}
+    return {"path": f"/persona/avatar/{file.filename}"}
 
 
 @app.post("/api/avatar")
