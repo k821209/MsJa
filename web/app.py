@@ -333,6 +333,18 @@ async def upload_image(file: UploadFile = File(...)):
     dest = UPLOADS_DIR / file.filename
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
+    # Register in persona_images DB
+    file_path = f"web/static/uploads/{file.filename}"
+    label = Path(file.filename).stem
+    conn = _conn()
+    try:
+        conn.execute(
+            "INSERT INTO persona_images (image_type, label, file_path, description) VALUES (?, ?, ?, ?)",
+            ("uploaded", label, file_path, f"Uploaded via web dashboard"),
+        )
+        conn.commit()
+    finally:
+        conn.close()
     return {"path": f"/static/uploads/{file.filename}"}
 
 

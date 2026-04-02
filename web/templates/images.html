@@ -27,7 +27,7 @@
 <div class="image-grid">
   {% for img in images %}
   <div class="image-card">
-    <img src="/persona/{{ img.file_path | replace('persona/', '') }}" alt="{{ img.label }}"
+    <img src="{% if img.file_path.startswith('web/') %}/{{ img.file_path | replace('web/', '') }}{% else %}/persona/{{ img.file_path | replace('persona/', '') }}{% endif %}" alt="{{ img.label }}"
          onerror="this.alt='Not found'; this.style.opacity=0.3"
          onclick="openLightbox(this.src, '{{ img.label }}')" style="cursor:pointer">
     <div class="image-info">
