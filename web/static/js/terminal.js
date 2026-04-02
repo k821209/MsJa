@@ -154,21 +154,6 @@ function connectWebSocket() {
   });
 }
 
-function newTerminal() {
-  if (ws) ws.close();
-  if (term) {
-    term.clear();
-    term.reset();
-  }
-  connectWebSocket();
-}
-
-function runClaude() {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'input', data: 'claude --dangerously-skip-permissions\n' }));
-  }
-}
-
 // Keyboard shortcut: Ctrl+`
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.key === '`') {

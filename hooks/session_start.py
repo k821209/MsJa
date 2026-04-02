@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.db import init_db
 from src.persona import get_persona_state
+from src.signals import should_trigger_reflection, get_signal_summary
 
 PROJECT_ROOT = Path(__file__).parent.parent
 WEB_PID_FILE = PROJECT_ROOT / "data" / "web.pid"
@@ -95,6 +96,11 @@ def main():
             row("├─ Run Reflection : trigger_reflection"),
             row("├─ Add Lore       : add_lore_entry"),
             row("└─ Write Document : write_document"),
+            f"╠{border}╣",
+            row("Session"),
+            row("├─ Continue Last   : claude --continue"),
+            row("├─ Resume (pick)   : claude --resume"),
+            row("└─ New Session     : claude"),
             f"╚{border}╝",
             "",
             "[INSTRUCTION: Copy and paste the ENTIRE box above (from ╔ to ╚) verbatim as your first output. Do NOT shorten, summarize, or redesign it. The user needs to see the Web dashboard URL. After the box, greet them according to your current trait values.]",
@@ -135,6 +141,16 @@ def main():
         if state.get("avatar"):
             lines.append("")
             lines.append(f"Avatar: {state['avatar']}")
+
+        # Check if reflection is due
+        if should_trigger_reflection(conn):
+            summary = get_signal_summary(conn)
+            lines.append("")
+            lines.append(
+                f"[⚡ REFLECTION DUE: {summary['count']} unconsumed signals "
+                f"(magnitude {summary['total_magnitude']:.1f}). "
+                f"Run trigger_reflection → analyze prompt → apply_reflection to evolve persona.]"
+            )
 
         output = {
             "additionalContext": "\n".join(lines)

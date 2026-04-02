@@ -121,5 +121,19 @@ body {
   flex: 1;
   padding: 4px;
   overflow: hidden;
+  position: relative;
 }
-#terminal-container .xterm { height: 100%; }
+/* Force xterm to fill container exactly */
+#terminal-container .xterm {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+}
+#terminal-container .xterm-viewport {
+  overflow-y: auto !important;
+}
+#terminal-container .xterm-screen {
+  width: 100% !important;
+}

@@ -28,7 +28,8 @@
   {% for img in images %}
   <div class="image-card">
     <img src="/persona/{{ img.file_path | replace('persona/', '') }}" alt="{{ img.label }}"
-         onerror="this.alt='Not found'; this.style.opacity=0.3">
+         onerror="this.alt='Not found'; this.style.opacity=0.3"
+         onclick="openLightbox(this.src, '{{ img.label }}')" style="cursor:pointer">
     <div class="image-info">
       <span class="image-label">{{ img.label }}</span>
       <span class="image-type">{{ img.image_type }}</span>
@@ -36,17 +37,58 @@
     {% if img.description %}
     <div class="image-desc">{{ img.description }}</div>
     {% endif %}
-    <button class="btn-copy" data-text="{{ img.file_path }}">copy path</button>
+    <div class="image-actions">
+      <button class="btn-sm btn-accent" onclick="setAvatar('{{ img.file_path }}')">avatar</button>
+      <button class="btn-copy" data-text="{{ img.file_path }}">copy path</button>
+      <button class="btn-sm btn-red" onclick="deleteImage({{ img.id }}, '{{ img.label }}')">delete</button>
+    </div>
   </div>
   {% endfor %}
   {% if not images %}
   <div class="empty">No images yet. Add them via MCP tools or upload above.</div>
   {% endif %}
 </div>
+<!-- Lightbox -->
+<div id="lightbox" onclick="closeLightbox()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; cursor:pointer; justify-content:center; align-items:center; flex-direction:column;">
+  <img id="lightbox-img" style="max-width:90vw; max-height:85vh; object-fit:contain; border-radius:8px;">
+  <div id="lightbox-label" style="color:#fff; margin-top:12px; font-size:0.9rem;"></div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<style>
+.image-actions { display: flex; gap: 6px; margin-top: 6px; }
+.btn-sm { padding: 3px 10px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: var(--surface2); color: var(--text); }
+.btn-red { border-color: var(--red); color: var(--red); }
+.btn-red:hover { background: var(--red); color: #fff; }
+.btn-accent { border-color: var(--accent); color: var(--accent); }
+.btn-accent:hover { background: var(--accent); color: #000; }
+</style>
 <script>
+async function setAvatar(filePath) {
+  const res = await fetch('/api/avatar', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({file_path: filePath}) });
+  if (res.ok) location.reload();
+  else alert('Failed to set avatar');
+}
+
+function openLightbox(src, label) {
+  const lb = document.getElementById('lightbox');
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox-label').textContent = label;
+  lb.style.display = 'flex';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').style.display = 'none';
+}
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeLightbox(); });
+
+async function deleteImage(id, label) {
+  if (!confirm(`Delete "${label}"? File will also be removed.`)) return;
+  const res = await fetch(`/api/images/${id}`, { method: 'DELETE' });
+  if (res.ok) location.reload();
+  else alert('Delete failed');
+}
+
 document.getElementById('upload-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const file = document.getElementById('file-input').files[0];

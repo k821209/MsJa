@@ -5,7 +5,6 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import anthropic
 from mcp.server.fastmcp import FastMCP
 
 from src.db import init_db
@@ -37,6 +36,14 @@ from src.documents import (
     update_document as _update_document,
 )
 from src.calendar import sync_events_bulk as _sync_cal_events
+from src.todos import (
+    complete_todo as _complete_todo,
+    create_todo as _create_todo,
+    delete_todo as _delete_todo,
+    get_todo as _get_todo,
+    list_todos as _list_todos,
+    update_todo as _update_todo,
+)
 from src.reflection import (
     complete_reflection,
     run_reflection,
@@ -162,28 +169,40 @@ def get_active_goals() -> list[dict] | dict:
 
 @mcp.tool()
 def trigger_reflection(trigger_type: str = "manual") -> dict[str, Any]:
-    """Start a reflection cycle: gather signals, call LLM for analysis, apply changes."""
+    """Start a reflection cycle: gather signals and return the analysis prompt.
+
+    Returns the prompt for Claude Code to analyze. Pass the JSON response
+    to apply_reflection() to apply the changes.
+    """
     conn = init_db()
     try:
         reflection_context = run_reflection(conn, trigger_type=trigger_type)
         if reflection_context.get("skipped") or reflection_context.get("reflection_id") is None:
             return {"status": "skipped", "reason": "Threshold not met or no pending signals"}
 
-        client = anthropic.Anthropic()
-        response = client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=4096,
-            system="You are a persona reflection engine. Analyze the signals and respond with JSON only.",
-            messages=[{"role": "user", "content": reflection_context["prompt"]}],
-        )
+        return {
+            "status": "pending",
+            "reflection_id": reflection_context["reflection_id"],
+            "prompt": reflection_context["prompt"],
+            "signal_count": reflection_context.get("signal_count", 0),
+        }
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
 
-        llm_response = response.content[0].text
+
+@mcp.tool()
+def apply_reflection(reflection_id: int, llm_response: str) -> dict[str, Any]:
+    """Apply a reflection result. Takes the JSON analysis from Claude Code and applies changes."""
+    conn = init_db()
+    try:
         result = complete_reflection(
             conn,
-            reflection_id=reflection_context["reflection_id"],
+            reflection_id=reflection_id,
             llm_response=llm_response,
         )
-        return {"status": "completed", "reflection_id": reflection_context["reflection_id"], "summary": result}
+        return {"status": "completed", "reflection_id": reflection_id, "summary": result}
     except Exception as e:
         return {"error": str(e)}
     finally:
@@ -508,6 +527,130 @@ def sync_calendar_events(events_json: str) -> dict[str, Any]:
         events = json.loads(events_json)
         count = _sync_cal_events(conn, events)
         return {"synced": count}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+# ── Todos ─────────────────────────────────────────────────────
+
+
+@mcp.tool()
+def create_todo(
+    title: str,
+    description: str | None = None,
+    priority: str = "medium",
+    due_date: str | None = None,
+    calendar_event_id: str | None = None,
+    tags: str | None = None,
+) -> dict[str, Any]:
+    """Create a new todo item.
+
+    Args:
+        title: Short task description
+        description: Optional longer details
+        priority: low, medium, high, or urgent
+        due_date: ISO 8601 date (e.g. '2026-04-03')
+        calendar_event_id: Link to a Google Calendar event ID
+        tags: Comma-separated tags
+    """
+    conn = init_db()
+    try:
+        tag_list = _parse_tags(tags)
+        todo_id = _create_todo(
+            conn, title=title, description=description, priority=priority,
+            due_date=due_date, calendar_event_id=calendar_event_id, tags=tag_list,
+        )
+        return {"todo_id": todo_id, "title": title}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def update_todo(
+    todo_id: int,
+    title: str | None = None,
+    description: str | None = None,
+    priority: str | None = None,
+    status: str | None = None,
+    due_date: str | None = None,
+    tags: str | None = None,
+) -> dict[str, Any]:
+    """Update a todo item.
+
+    Args:
+        todo_id: ID of the todo to update
+        title: New title (optional)
+        description: New description (optional)
+        priority: New priority (optional)
+        status: pending, in_progress, done, or cancelled (optional)
+        due_date: New due date (optional)
+        tags: Comma-separated tags to replace existing (optional)
+    """
+    conn = init_db()
+    try:
+        tag_list = _parse_tags(tags) if tags is not None else None
+        result = _update_todo(conn, todo_id, title=title, description=description,
+                              priority=priority, status=status, due_date=due_date, tags=tag_list)
+        return result
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def complete_todo(todo_id: int) -> dict[str, Any]:
+    """Mark a todo as done."""
+    conn = init_db()
+    try:
+        return _complete_todo(conn, todo_id)
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def list_todos(
+    status: str | None = None,
+    priority: str | None = None,
+    tags: str | None = None,
+    query: str | None = None,
+    include_done: bool = False,
+    limit: int = 50,
+) -> list[dict] | dict:
+    """List todo items with optional filters.
+
+    Args:
+        status: Filter by status (pending, in_progress, done, cancelled)
+        priority: Filter by priority (low, medium, high, urgent)
+        tags: Comma-separated tags to filter by
+        query: Search in title and description
+        include_done: Include done/cancelled items (default false)
+        limit: Max items to return
+    """
+    conn = init_db()
+    try:
+        tag_list = _parse_tags(tags)
+        return _list_todos(conn, status=status, priority=priority, tags=tag_list or None,
+                           query=query, include_done=include_done, limit=limit)
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def delete_todo(todo_id: int) -> dict[str, Any]:
+    """Delete a todo permanently."""
+    conn = init_db()
+    try:
+        _delete_todo(conn, todo_id)
+        return {"status": "deleted", "todo_id": todo_id}
     except Exception as e:
         return {"error": str(e)}
     finally:

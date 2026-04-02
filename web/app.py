@@ -58,6 +58,16 @@ from src.documents import (
     update_document as _update_doc,
     archive_document as _archive_doc,
 )
+from src.todos import (
+    complete_todo as _complete_todo,
+    create_todo as _create_todo,
+    delete_todo as _delete_todo,
+    get_todo as _get_todo,
+    get_todo_stats as _get_todo_stats,
+    list_todos as _list_todos,
+    update_todo as _update_todo,
+)
+from src.dotenv import load_env, save_env_key, get_env_keys
 from src.signals import get_signal_summary
 from src.reflection import get_reflection_history
 
@@ -326,6 +336,52 @@ async def upload_image(file: UploadFile = File(...)):
     return {"path": f"/static/uploads/{file.filename}"}
 
 
+@app.post("/api/avatar")
+async def api_set_avatar(request: Request):
+    body = await request.json()
+    file_path = body.get("file_path")
+    conn = _conn()
+    try:
+        conn.execute("UPDATE persona_meta SET avatar_path = ? WHERE id = 1", (file_path,))
+        conn.commit()
+        return {"status": "ok", "avatar_path": file_path}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/images/{image_id}")
+async def api_delete_image(image_id: int):
+    conn = _conn()
+    try:
+        # Get image info before deleting
+        row = conn.execute("SELECT file_path FROM persona_images WHERE id = ?", (image_id,)).fetchone()
+        if row is None:
+            return JSONResponse({"error": "Image not found"}, status_code=404)
+
+        file_path = PROJECT_ROOT / row["file_path"]
+
+        # Check if this is the current avatar
+        meta = conn.execute("SELECT avatar_path FROM persona_meta WHERE id = 1").fetchone()
+        if meta and meta["avatar_path"] == row["file_path"]:
+            conn.execute("UPDATE persona_meta SET avatar_path = 'persona/avatar/default.png' WHERE id = 1")
+
+        # Delete from DB
+        conn.execute("DELETE FROM persona_images WHERE id = ?", (image_id,))
+        conn.commit()
+
+        # Delete file
+        if file_path.exists():
+            file_path.unlink()
+
+        return {"status": "deleted", "image_id": image_id}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
 # ── Documents ──────────────────────────────────────────────────
 
 
@@ -393,6 +449,133 @@ async def api_doc_versions(doc_id: int):
         return _get_doc_versions(conn, doc_id)
     finally:
         conn.close()
+
+
+# ── Todos ─────────────────────────────────────────────────────
+
+
+@app.get("/page/todos", response_class=HTMLResponse)
+async def todos_page(
+    request: Request,
+    status: str | None = None,
+    priority: str | None = None,
+    tag: str | None = None,
+    q: str | None = None,
+):
+    conn = _conn()
+    try:
+        tags = [t.strip() for t in tag.split(",")] if tag else None
+        include_done = status in ("done", "cancelled")
+        todos = _list_todos(conn, status=status, priority=priority, tags=tags,
+                            query=q, include_done=include_done, limit=50)
+        stats = _get_todo_stats(conn)
+        return templates.TemplateResponse(request=request, name="todos.html", context={
+            "request": request,
+            "todos": todos,
+            "stats": stats,
+            "filters": {"status": status, "priority": priority, "tag": tag, "q": q},
+        })
+    finally:
+        conn.close()
+
+
+@app.post("/api/todos")
+async def api_create_todo(request: Request):
+    body = await request.json()
+    conn = _conn()
+    try:
+        tags = [t.strip() for t in body.get("tags", "").split(",")] if body.get("tags") else None
+        todo_id = _create_todo(
+            conn, title=body["title"], description=body.get("description"),
+            priority=body.get("priority", "medium"), due_date=body.get("due_date"),
+            calendar_event_id=body.get("calendar_event_id"), tags=tags,
+        )
+        return {"todo_id": todo_id}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.put("/api/todos/{todo_id}")
+async def api_update_todo(todo_id: int, request: Request):
+    body = await request.json()
+    conn = _conn()
+    try:
+        tags = [t.strip() for t in body["tags"].split(",")] if "tags" in body else None
+        result = _update_todo(
+            conn, todo_id, title=body.get("title"), description=body.get("description"),
+            priority=body.get("priority"), status=body.get("status"),
+            due_date=body.get("due_date"), tags=tags,
+        )
+        return result
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.post("/api/todos/{todo_id}/complete")
+async def api_complete_todo(todo_id: int):
+    conn = _conn()
+    try:
+        return _complete_todo(conn, todo_id)
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/todos/{todo_id}")
+async def api_delete_todo(todo_id: int):
+    conn = _conn()
+    try:
+        _delete_todo(conn, todo_id)
+        return {"status": "deleted"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+# ── Settings ──────────────────────────────────────────────────
+
+
+# Keys that the settings page manages
+MANAGED_KEYS = ["GEMINI_API_KEY"]
+
+
+@app.get("/page/settings", response_class=HTMLResponse)
+async def settings_page(request: Request):
+    env = load_env()
+    keys = {k: env.get(k, "") for k in MANAGED_KEYS}
+    return templates.TemplateResponse(request=request, name="settings.html", context={
+        "request": request,
+        "keys": keys,
+    })
+
+
+@app.post("/api/settings/keys")
+async def api_save_keys(request: Request):
+    body = await request.json()
+    try:
+        for key, value in body.items():
+            if key in MANAGED_KEYS:
+                save_env_key(key, value)
+        return {"status": "ok"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@app.get("/api/settings/keys")
+async def api_get_keys():
+    env = load_env()
+    # Mask values for display (show first 8 chars + ***)
+    masked = {}
+    for k in MANAGED_KEYS:
+        v = env.get(k, "")
+        masked[k] = v[:8] + "***" if len(v) > 8 else v
+    return masked
 
 
 # ── WebSocket Terminal (PTY) ───────────────────────────────────

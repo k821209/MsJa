@@ -1,0 +1,91 @@
+{% extends "base_inner.html" %}
+{% block title %}Deevo — Settings{% endblock %}
+{% block nav_settings %}active{% endblock %}
+
+{% block content %}
+<h1>Settings</h1>
+<p class="subtitle">API keys and configuration</p>
+
+<div class="card" style="max-width: 600px;">
+  <h2>API Keys</h2>
+  <p class="dim" style="margin-bottom: 16px; font-size: 0.85rem;">
+    Keys are stored in the project's <code>.env</code> file. They are never sent externally.
+  </p>
+
+  <div class="settings-form">
+    {% for key, value in keys.items() %}
+    <div class="setting-row">
+      <label for="key-{{ key }}">{{ key }}</label>
+      <div class="setting-input">
+        <input type="password" id="key-{{ key }}" name="{{ key }}"
+               value="{{ value }}" placeholder="Enter API key..."
+               autocomplete="off">
+        <button class="btn-sm btn-toggle" onclick="toggleKey('{{ key }}')" type="button">show</button>
+      </div>
+    </div>
+    {% endfor %}
+
+    <button class="btn" onclick="saveKeys()" id="save-btn">Save</button>
+    <span id="save-status" style="margin-left: 12px; font-size: 0.85rem;"></span>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.settings-form { display: flex; flex-direction: column; gap: 16px; }
+.setting-row { display: flex; flex-direction: column; gap: 4px; }
+.setting-row label { font-size: 0.85rem; font-weight: 600; color: var(--text2); }
+.setting-input { display: flex; gap: 8px; }
+.setting-input input {
+  flex: 1; padding: 8px 12px; background: var(--bg); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); font-family: monospace; font-size: 0.9rem;
+}
+.setting-input input:focus { border-color: var(--accent); outline: none; }
+.btn-toggle {
+  padding: 4px 10px; font-size: 0.75rem; border: 1px solid var(--border);
+  border-radius: 4px; cursor: pointer; background: var(--surface2); color: var(--text2);
+  min-width: 50px;
+}
+.dim { color: var(--text2); }
+</style>
+<script>
+function toggleKey(key) {
+  const input = document.getElementById('key-' + key);
+  const btn = input.nextElementSibling;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = 'hide';
+  } else {
+    input.type = 'password';
+    btn.textContent = 'show';
+  }
+}
+
+async function saveKeys() {
+  const keys = {};
+  document.querySelectorAll('.setting-input input').forEach(input => {
+    keys[input.name] = input.value;
+  });
+  const status = document.getElementById('save-status');
+  try {
+    const res = await fetch('/api/settings/keys', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(keys),
+    });
+    if (res.ok) {
+      status.textContent = 'Saved!';
+      status.style.color = 'var(--green)';
+    } else {
+      status.textContent = 'Error saving';
+      status.style.color = 'var(--red)';
+    }
+  } catch (e) {
+    status.textContent = 'Connection error';
+    status.style.color = 'var(--red)';
+  }
+  setTimeout(() => { status.textContent = ''; }, 3000);
+}
+</script>
+{% endblock %}

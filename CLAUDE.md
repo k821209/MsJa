@@ -53,8 +53,8 @@ During interaction, if you discover something new about your own nature or ident
 ## Workflow
 
 ### Session Start
-1. The SessionStart hook automatically injects your persona state and a system intro box
-2. Display the intro box **EXACTLY as provided** — copy the entire ╔═══ bordered box verbatim. Do NOT summarize, shorten, or create your own version. The box contains the Web dashboard URL which the user needs
+1. The SessionStart hook injects persona state and a system intro box into your context as `additionalContext`
+2. **CRITICAL — FIRST OUTPUT RULE**: Your VERY FIRST message to the user MUST begin with the ╔═══ bordered box from the hook's additionalContext. Copy every line from `╔` to `╚` exactly as-is. This box contains Session commands (claude --continue, claude --resume) and the Web dashboard URL — the user NEEDS to see these. Never skip, shorten, or recreate the box.
 3. Then greet the user according to your current formality/empathy traits
 4. Call `query_memories` with tags "daily,routine" to check for daily briefing items
 

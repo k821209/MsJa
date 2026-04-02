@@ -1,0 +1,123 @@
+{% extends "base_inner.html" %}
+{% block title %}Deevo — Todos{% endblock %}
+{% block nav_todos %}active{% endblock %}
+
+{% block content %}
+<h1>Todos</h1>
+<p class="subtitle">Task management by the AI secretary</p>
+
+{% if stats.total > 0 %}
+<div class="card">
+  <div class="stats-row">
+    <span class="dim-tag">Total: {{ stats.total }}</span>
+    {% for s, c in stats.by_status.items() %}
+    <span class="dim-tag">{{ s }}: {{ c }}</span>
+    {% endfor %}
+    {% if stats.overdue > 0 %}
+    <span class="dim-tag" style="color:var(--red)">Overdue: {{ stats.overdue }}</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<form class="filter-bar" method="GET" action="/page/todos">
+  <select name="status">
+    <option value="">Active</option>
+    <option value="pending" {{ 'selected' if filters.status == 'pending' }}>Pending</option>
+    <option value="in_progress" {{ 'selected' if filters.status == 'in_progress' }}>In Progress</option>
+    <option value="done" {{ 'selected' if filters.status == 'done' }}>Done</option>
+    <option value="cancelled" {{ 'selected' if filters.status == 'cancelled' }}>Cancelled</option>
+  </select>
+  <select name="priority">
+    <option value="">All priority</option>
+    <option value="urgent" {{ 'selected' if filters.priority == 'urgent' }}>Urgent</option>
+    <option value="high" {{ 'selected' if filters.priority == 'high' }}>High</option>
+    <option value="medium" {{ 'selected' if filters.priority == 'medium' }}>Medium</option>
+    <option value="low" {{ 'selected' if filters.priority == 'low' }}>Low</option>
+  </select>
+  <input type="text" name="tag" placeholder="Tags" value="{{ filters.tag or '' }}">
+  <input type="text" name="q" placeholder="Search..." value="{{ filters.q or '' }}">
+  <button type="submit" class="btn">Filter</button>
+</form>
+
+<div class="todo-list">
+  {% for todo in todos %}
+  <div class="card todo-card{% if todo.is_overdue %} overdue{% endif %}" data-id="{{ todo.id }}">
+    <div class="todo-header">
+      <span class="todo-priority priority-{{ todo.priority }}">{{ todo.priority }}</span>
+      <span class="todo-status status-{{ todo.status }}">{{ todo.status }}</span>
+      {% if todo.due_date %}
+      <span class="todo-due{% if todo.is_overdue %} overdue-text{% endif %}">{{ todo.due_date[:10] }}</span>
+      {% endif %}
+      {% if todo.calendar_event_id %}
+      <span class="dim-tag">linked</span>
+      {% endif %}
+    </div>
+    <div class="todo-title">{{ todo.title }}</div>
+    {% if todo.description %}
+    <div class="todo-desc">{{ todo.description[:200] }}{% if todo.description|length > 200 %}...{% endif %}</div>
+    {% endif %}
+    {% if todo.tags %}
+    <div class="todo-tags">
+      {% for tag in todo.tags %}
+      <span class="tag">{{ tag }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="todo-actions">
+      {% if todo.status != 'done' %}
+      <button class="btn btn-sm btn-green" onclick="completeTodo({{ todo.id }})">Done</button>
+      {% endif %}
+      <button class="btn btn-sm btn-red" onclick="deleteTodo({{ todo.id }})">Delete</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% if not todos %}
+  <div class="empty">No todos yet. Ask Deevo to create tasks for you!</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.todo-card { margin-bottom: 8px; padding: 12px 16px; }
+.todo-card.overdue { border-left: 3px solid var(--red); }
+.todo-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
+.todo-title { font-weight: 600; margin-bottom: 4px; }
+.todo-desc { color: var(--text2); font-size: 0.85rem; margin-bottom: 6px; }
+.todo-tags { display: flex; gap: 4px; margin-bottom: 6px; }
+.todo-actions { display: flex; gap: 6px; }
+.todo-due { color: var(--text2); }
+.overdue-text { color: var(--red) !important; font-weight: 600; }
+
+.todo-priority {
+  padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+}
+.priority-urgent { background: var(--red); color: #fff; }
+.priority-high { background: var(--orange); color: #000; }
+.priority-medium { background: var(--accent); color: #000; }
+.priority-low { background: var(--surface2); color: var(--text2); }
+
+.todo-status { font-size: 0.75rem; color: var(--text2); }
+.status-done { color: var(--green); }
+.status-in_progress { color: var(--accent); }
+.status-cancelled { color: var(--text2); text-decoration: line-through; }
+
+.btn-sm { padding: 3px 10px; font-size: 0.75rem; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: var(--surface2); color: var(--text); }
+.btn-green { border-color: var(--green); color: var(--green); }
+.btn-green:hover { background: var(--green); color: #000; }
+.btn-red { border-color: var(--red); color: var(--red); }
+.btn-red:hover { background: var(--red); color: #fff; }
+</style>
+<script>
+async function completeTodo(id) {
+  await fetch(`/api/todos/${id}/complete`, { method: 'POST' });
+  location.reload();
+}
+async function deleteTodo(id) {
+  if (!confirm('Delete this todo?')) return;
+  await fetch(`/api/todos/${id}`, { method: 'DELETE' });
+  location.reload();
+}
+</script>
+{% endblock %}
