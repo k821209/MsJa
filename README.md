@@ -8,7 +8,7 @@ Self-evolving AI secretary powered by Claude Code. Personality traits, behaviora
 git clone https://github.com/k821209/MsJa.git
 cd MsJa
 bash setup.sh
-./scripts/restart_web.sh
+./scripts/start_web.sh
 ```
 
 Then open http://127.0.0.1:3000 and launch `claude` from the web terminal.
@@ -87,7 +87,7 @@ Starts automatically on first `claude` session (via SessionStart hook).
 | Script | Usage |
 |--------|-------|
 | `setup.sh` | Full installation and verification |
-| `scripts/restart_web.sh` | Restart web dashboard |
+| `scripts/start_web.sh` | Restart web dashboard |
 | `scripts/seed_lore.py` | Seed initial lore entries |
 
 ## Google Calendar Setup

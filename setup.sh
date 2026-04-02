@@ -93,7 +93,7 @@ if [ $FAIL -eq 0 ]; then
     echo "  ✅ Setup complete! All checks passed."
     echo ""
     echo "  Start MsJa:"
-    echo "    1. ./scripts/restart_web.sh"
+    echo "    1. ./scripts/start_web.sh"
     echo "    2. Open http://127.0.0.1:3000"
     echo "    3. Launch claude from web terminal"
     echo "══════════════════════════════════════════"
