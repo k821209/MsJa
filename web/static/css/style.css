@@ -53,6 +53,32 @@ body {
 .nav-item:hover { color: var(--text); background: var(--surface2); }
 .nav-item.active { color: var(--accent); border-left: 3px solid var(--accent); }
 
+/* Quick start */
+.quick-start {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border: 1px dashed var(--border);
+}
+.quick-start-label { font-size: 13px; color: var(--text2); white-space: nowrap; }
+.quick-start-cmd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+.quick-start-cmd code {
+  background: var(--bg);
+  padding: 6px 12px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-family: 'SF Mono', 'Monaco', 'Menlo', monospace;
+  color: var(--green);
+  user-select: all;
+}
+
 /* Sidebar extras */
 .sidebar-spacer { flex: 1; }
 .terminal-toggle {
@@ -407,3 +433,88 @@ h2 { font-size: 18px; margin-bottom: 12px; color: var(--text2); }
 .version-date { font-size: 12px; color: var(--text2); }
 .version-summary { font-size: 13px; color: var(--text2); flex: 1; }
 .modal-wide { max-width: 800px; }
+
+/* Calendar */
+.cal-layout { display: flex; flex-direction: column; gap: 12px; }
+.cal-week { overflow-x: auto; }
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  min-width: 600px;
+}
+.week-day {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  min-height: 80px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.week-day:hover { border-color: var(--accent); }
+.week-day.active { border-color: var(--accent); background: var(--surface2); }
+.week-day-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.week-day-name { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; }
+.week-day-date { font-size: 12px; color: var(--text2); font-family: monospace; }
+.week-event { font-size: 11px; padding: 2px 0; display: flex; gap: 4px; }
+.week-event-time { color: var(--accent); font-family: monospace; min-width: 36px; }
+.week-event-title { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.week-empty { font-size: 11px; color: var(--text2); text-align: center; }
+
+.event-list { display: flex; flex-direction: column; gap: 8px; }
+.event-card {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.event-time {
+  min-width: 70px;
+  font-family: monospace;
+  font-size: 14px;
+  color: var(--accent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.event-time-sep { font-size: 11px; color: var(--text2); }
+.event-allday { font-size: 11px; color: var(--orange); }
+.event-details { flex: 1; min-width: 0; }
+.event-title { font-weight: 600; font-size: 15px; margin-bottom: 4px; }
+.event-location { font-size: 12px; color: var(--text2); margin-bottom: 2px; }
+.event-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
+.event-attendees { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.attendee {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--surface2);
+  color: var(--text2);
+}
+.attendee.status-accepted { color: var(--green); }
+.attendee.status-declined { color: var(--red); }
+.attendee.status-tentative { color: var(--orange); }
+.event-actions { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+
+.rsvp { font-size: 11px; padding: 1px 6px; border-radius: 10px; }
+.rsvp-accepted { background: #2a3f1f; color: var(--green); }
+.rsvp-declined { background: #3f1f1f; color: var(--red); }
+.rsvp-tentative { background: #3f3a1f; color: var(--orange); }
+.rsvp-needsAction { background: var(--surface2); color: var(--text2); }
+
+.upcoming-list { display: flex; flex-direction: column; }
+.upcoming-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.upcoming-date { font-family: monospace; color: var(--text2); min-width: 80px; }
+.upcoming-time { font-family: monospace; color: var(--accent); min-width: 50px; }
+.upcoming-title { flex: 1; }

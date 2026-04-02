@@ -44,6 +44,12 @@ from src.persona import (
     get_trait_definitions,
     get_trait_history,
 )
+from src.calendar import (
+    get_today_events as _get_today,
+    get_week_events as _get_week,
+    get_upcoming_events as _get_upcoming,
+    get_events_for_date as _get_events_date,
+)
 from src.documents import (
     get_document as _get_doc,
     get_document_stats as _get_doc_stats,
@@ -162,6 +168,39 @@ async def reflections_page(request: Request):
             "request": request,
             "reflections": reflections,
         })
+    finally:
+        conn.close()
+
+
+@app.get("/page/calendar", response_class=HTMLResponse)
+async def calendar_page(request: Request, date: str | None = None):
+    from datetime import datetime
+    conn = _conn()
+    try:
+        today = _get_today(conn)
+        week = _get_week(conn)
+        upcoming = _get_upcoming(conn, limit=15)
+        selected_date = date or datetime.now().strftime("%Y-%m-%d")
+        selected_events = _get_events_date(conn, selected_date) if date else today
+        return templates.TemplateResponse(request=request, name="calendar.html", context={
+            "request": request,
+            "today_events": today,
+            "week": week,
+            "upcoming": upcoming,
+            "selected_date": selected_date,
+            "selected_events": selected_events,
+        })
+    finally:
+        conn.close()
+
+
+@app.get("/api/calendar/events")
+async def api_calendar_events(date: str | None = None):
+    conn = _conn()
+    try:
+        if date:
+            return _get_events_date(conn, date)
+        return _get_today(conn)
     finally:
         conn.close()
 

@@ -36,6 +36,7 @@ from src.documents import (
     list_documents as _list_documents,
     update_document as _update_document,
 )
+from src.calendar import sync_events_bulk as _sync_cal_events
 from src.reflection import (
     complete_reflection,
     run_reflection,
@@ -484,6 +485,29 @@ def get_document_history(document_id: int) -> list[dict] | dict:
     conn = init_db()
     try:
         return _get_document_versions(conn, document_id)
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+# ── Calendar Sync ──────────────────────────────────────────────
+
+
+@mcp.tool()
+def sync_calendar_events(events_json: str) -> dict[str, Any]:
+    """Cache calendar events to local DB for web dashboard display.
+
+    Call this after using gcal_list_events. Pass the raw events JSON array.
+
+    Args:
+        events_json: JSON string of events array from gcal_list_events
+    """
+    conn = init_db()
+    try:
+        events = json.loads(events_json)
+        count = _sync_cal_events(conn, events)
+        return {"synced": count}
     except Exception as e:
         return {"error": str(e)}
     finally:

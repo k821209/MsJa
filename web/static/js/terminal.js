@@ -3,6 +3,7 @@ let term = null;
 let ws = null;
 let fitAddon = null;
 let termOpen = false;
+let fitTimeout = null;
 
 function toggleTerminal() {
   const panel = document.getElementById('terminal-panel');
@@ -12,24 +13,37 @@ function toggleTerminal() {
   if (termOpen) {
     panel.classList.remove('hidden');
     icon.textContent = '⏹';
-    document.body.classList.add('terminal-active');
     if (!term) {
-      initTerminal();
+      // Delay init so the panel has layout dimensions
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => initTerminal());
+      });
     } else {
-      fitAddon.fit();
+      debouncedFit();
     }
   } else {
     panel.classList.add('hidden');
     icon.textContent = '▶';
-    document.body.classList.remove('terminal-active');
   }
 }
 
+function debouncedFit() {
+  if (fitTimeout) clearTimeout(fitTimeout);
+  fitTimeout = setTimeout(() => {
+    if (fitAddon && term && termOpen) {
+      try { fitAddon.fit(); } catch(e) {}
+    }
+  }, 50);
+}
+
 function initTerminal() {
+  const container = document.getElementById('terminal-container');
+
   term = new Terminal({
     cursorBlink: true,
     fontSize: 13,
     fontFamily: "'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace",
+    scrollback: 5000,
     theme: {
       background: '#0d1117',
       foreground: '#e6edf3',
@@ -57,18 +71,19 @@ function initTerminal() {
   fitAddon = new FitAddon.FitAddon();
   term.loadAddon(fitAddon);
 
-  const container = document.getElementById('terminal-container');
   term.open(container);
-  fitAddon.fit();
 
-  connectWebSocket();
+  // Fit after open with a small delay for layout to settle
+  setTimeout(() => {
+    fitAddon.fit();
+    connectWebSocket();
+  }, 100);
 
-  // Handle resize
-  const resizeObserver = new ResizeObserver(() => {
-    if (fitAddon && termOpen) fitAddon.fit();
-  });
+  // Resize observer — debounced to avoid thrashing
+  const resizeObserver = new ResizeObserver(() => debouncedFit());
   resizeObserver.observe(container);
 
+  // Send resize to PTY
   term.onResize(({ cols, rows }) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'resize', cols, rows }));
@@ -81,14 +96,16 @@ function connectWebSocket() {
   ws = new WebSocket(`${protocol}//${location.host}/ws/terminal`);
 
   ws.onopen = () => {
-    // Send initial size
-    if (fitAddon) {
-      fitAddon.fit();
-      const dims = fitAddon.proposeDimensions();
-      if (dims) {
-        ws.send(JSON.stringify({ type: 'resize', cols: dims.cols, rows: dims.rows }));
+    // Send initial size after connection
+    setTimeout(() => {
+      if (fitAddon) {
+        fitAddon.fit();
+        const dims = fitAddon.proposeDimensions();
+        if (dims) {
+          ws.send(JSON.stringify({ type: 'resize', cols: dims.cols, rows: dims.rows }));
+        }
       }
-    }
+    }, 150);
   };
 
   ws.onmessage = (event) => {
@@ -103,7 +120,6 @@ function connectWebSocket() {
     term.write('\r\n\x1b[31m[Connection error]\x1b[0m\r\n');
   };
 
-  // Send keystrokes
   term.onData((data) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify({ type: 'input', data }));
@@ -122,7 +138,7 @@ function newTerminal() {
 
 function runClaude() {
   if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'input', data: 'claude\n' }));
+    ws.send(JSON.stringify({ type: 'input', data: 'claude --dangerously-skip-permissions\n' }));
   }
 }
 

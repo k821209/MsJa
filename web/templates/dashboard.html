@@ -5,6 +5,15 @@
 {% block content %}
 <h1>{{ state.persona_name }}</h1>
 
+<!-- Quick start -->
+<div class="card quick-start">
+  <div class="quick-start-label">Open terminal and run:</div>
+  <div class="quick-start-cmd">
+    <code id="start-cmd">claude --dangerously-skip-permissions</code>
+    <button class="btn-copy" data-text="claude --dangerously-skip-permissions">copy</button>
+  </div>
+</div>
+
 <div class="grid">
   <!-- Avatar -->
   <div class="card avatar-card">

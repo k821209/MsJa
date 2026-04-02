@@ -1,0 +1,110 @@
+{% extends "base_inner.html" %}
+{% block title %}Deevo — Calendar{% endblock %}
+
+{% block content %}
+<h1>Calendar</h1>
+<p class="subtitle">Events synced from Google Calendar. Ask Deevo to sync: <code>sync my calendar for this week</code></p>
+
+<div class="cal-layout">
+  <!-- Week view -->
+  <div class="card cal-week">
+    <h2>This Week</h2>
+    <div class="week-grid">
+      {% for date, events in week.items() %}
+      <div class="week-day {% if date == selected_date %}active{% endif %}"
+           onclick="window.location.href='/page/calendar?date={{ date }}'">
+        <div class="week-day-header">
+          <span class="week-day-name">{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][loop.index0] }}</span>
+          <span class="week-day-date">{{ date[5:] }}</span>
+        </div>
+        <div class="week-day-events">
+          {% for e in events %}
+          <div class="week-event" title="{{ e.summary }}">
+            <span class="week-event-time">{{ e.start_time[11:16] if not e.all_day else 'all day' }}</span>
+            <span class="week-event-title">{{ e.summary[:20] }}</span>
+          </div>
+          {% endfor %}
+          {% if not events %}
+          <div class="week-empty">—</div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Selected day detail -->
+  <div class="card">
+    <h2>{{ selected_date }}</h2>
+    {% if selected_events %}
+    <div class="event-list">
+      {% for e in selected_events %}
+      <div class="event-card">
+        <div class="event-time">
+          {% if e.all_day %}
+          <span class="event-allday">All Day</span>
+          {% else %}
+          <span>{{ e.start_time[11:16] }}</span>
+          <span class="event-time-sep">–</span>
+          <span>{{ e.end_time[11:16] }}</span>
+          {% endif %}
+        </div>
+        <div class="event-details">
+          <div class="event-title">{{ e.summary }}</div>
+          {% if e.location %}
+          <div class="event-location">📍 {{ e.location }}</div>
+          {% endif %}
+          {% if e.description %}
+          <div class="event-desc">{{ e.description[:200] }}</div>
+          {% endif %}
+          {% if e.attendees %}
+          <div class="event-attendees">
+            {% for att in e.attendees[:5] %}
+            <span class="attendee status-{{ att.get('responseStatus', 'needsAction') }}">
+              {{ att.get('displayName') or att.get('email', '')[:20] }}
+            </span>
+            {% endfor %}
+            {% if e.attendees | length > 5 %}
+            <span class="attendee">+{{ e.attendees | length - 5 }} more</span>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="event-actions">
+          {% if e.response_status %}
+          <span class="rsvp rsvp-{{ e.response_status }}">{{ e.response_status }}</span>
+          {% endif %}
+          {% if e.html_link %}
+          <a href="{{ e.html_link }}" target="_blank" class="btn-sm">open</a>
+          {% endif %}
+          <button class="btn-copy" data-text="{{ e.summary }} ({{ e.start_time[:16] }})">copy</button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No events for this date. Sync calendar via Claude Code.</div>
+    {% endif %}
+  </div>
+
+  <!-- Upcoming -->
+  <div class="card">
+    <h2>Upcoming</h2>
+    <div class="upcoming-list">
+      {% for e in upcoming %}
+      <div class="upcoming-row">
+        <span class="upcoming-date">{{ e.start_time[:10] }}</span>
+        <span class="upcoming-time">{{ e.start_time[11:16] if not e.all_day else 'all day' }}</span>
+        <span class="upcoming-title">{{ e.summary }}</span>
+        {% if e.response_status %}
+        <span class="rsvp rsvp-{{ e.response_status }}">{{ e.response_status }}</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% if not upcoming %}
+      <div class="empty">No upcoming events cached.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
