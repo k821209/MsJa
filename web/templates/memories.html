@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Deevo — Memories{% endblock %}
+{% block nav_memories %}active{% endblock %}
+
+{% block content %}
+<h1>Memories</h1>
+
+<div class="card">
+  <div class="stats-row">
+    <span class="dim-tag">Total: {{ stats.total }}</span>
+    {% for type, count in stats.by_type.items() %}
+    <span class="dim-tag">{{ type }}: {{ count }}</span>
+    {% endfor %}
+    <span class="dim-tag">Archived: {{ stats.archived }}</span>
+  </div>
+</div>
+
+<form class="filter-bar" method="GET" action="/memories">
+  <select name="type">
+    <option value="">All types</option>
+    <option value="episodic" {{ 'selected' if filters.type == 'episodic' }}>Episodic</option>
+    <option value="semantic" {{ 'selected' if filters.type == 'semantic' }}>Semantic</option>
+    <option value="procedural" {{ 'selected' if filters.type == 'procedural' }}>Procedural</option>
+  </select>
+  <input type="text" name="tag" placeholder="Tags (comma-separated)" value="{{ filters.tag or '' }}">
+  <input type="text" name="q" placeholder="Search content..." value="{{ filters.q or '' }}">
+  <button type="submit" class="btn">Filter</button>
+</form>
+
+<div class="memory-list">
+  {% for mem in memories %}
+  <div class="card memory-card">
+    <div class="memory-header">
+      <span class="memory-type type-{{ mem.memory_type }}">{{ mem.memory_type }}</span>
+      <span class="memory-importance">importance: {{ '%.2f' % mem.importance }}</span>
+      <span class="memory-date">{{ mem.created_at[:10] }}</span>
+    </div>
+    <div class="memory-content">{{ mem.content }}</div>
+    {% if mem.tags %}
+    <div class="memory-tags">
+      {% for tag in mem.tags %}
+      <a href="/memories?tag={{ tag }}" class="tag">{{ tag }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="memory-footer">
+      <span class="memory-meta">accessed: {{ mem.access_count }}x</span>
+      <button class="btn-copy" data-text="{{ mem.content }}">copy</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% if not memories %}
+  <div class="empty">No memories found.</div>
+  {% endif %}
+</div>
+{% endblock %}

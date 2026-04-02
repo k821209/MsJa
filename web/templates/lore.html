@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Deevo — Lore{% endblock %}
+{% block nav_lore %}active{% endblock %}
+
+{% block content %}
+<h1>Lore</h1>
+<p class="subtitle">Self-narrative entries that define the persona's identity. These evolve through reflection.</p>
+
+<div class="lore-grid">
+  {% for entry in lore %}
+  <div class="card lore-card" data-lore-id="{{ entry.id }}">
+    <div class="lore-header">
+      <span class="lore-cat">{{ entry.category }}</span>
+      <div class="lore-sig-bar">
+        <div class="lore-sig-fill" style="width: {{ (entry.significance * 100) | int }}%"></div>
+        <span>{{ '%.2f' % entry.significance }}</span>
+      </div>
+    </div>
+    <div class="lore-content">{{ entry.content }}</div>
+    <div class="lore-footer">
+      <span class="lore-source">{{ entry.source }}</span>
+      <span class="lore-date">{{ entry.created_at[:10] }}</span>
+      {% if entry.parent_id %}
+      <button class="btn-sm" onclick="showHistory({{ entry.id }})">evolution chain</button>
+      {% endif %}
+      <button class="btn-copy" data-text="{{ entry.content }}">copy</button>
+    </div>
+  </div>
+  {% endfor %}
+  {% if not lore %}
+  <div class="empty">No lore entries yet. They will emerge through reflection.</div>
+  {% endif %}
+</div>
+
+<!-- History modal -->
+<div id="history-modal" class="modal hidden">
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <h2>Evolution Chain</h2>
+    <div id="history-chain"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function showHistory(loreId) {
+  const res = await fetch(`/api/lore/${loreId}/history`);
+  const chain = await res.json();
+  const el = document.getElementById('history-chain');
+  el.innerHTML = chain.map((l, i) => `
+    <div class="chain-entry ${l.is_active ? 'active' : 'archived'}">
+      <div class="chain-arrow">${i > 0 ? '&darr; evolved from' : '(current)'}</div>
+      <div class="chain-sig">${l.significance.toFixed(2)} &middot; ${l.category}</div>
+      <div class="chain-text">${l.content}</div>
+      <div class="chain-meta">${l.source} &middot; ${l.created_at.slice(0,10)}</div>
+    </div>
+  `).join('');
+  document.getElementById('history-modal').classList.remove('hidden');
+}
+function closeModal() {
+  document.getElementById('history-modal').classList.add('hidden');
+}
+</script>
+{% endblock %}

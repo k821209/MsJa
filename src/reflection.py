@@ -8,11 +8,16 @@ from typing import Any
 
 from src.db import transaction
 from src.persona import (
+    add_lore,
     add_rule,
+    archive_lore,
     deactivate_rule,
+    evolve_lore,
+    get_active_lore,
     get_active_rules,
     get_persona_state,
     get_trait_definitions,
+    update_lore_significance,
     update_rule_weight,
     update_traits,
 )
@@ -88,9 +93,12 @@ def build_reflection_prompt(conn: sqlite3.Connection, reflection_id: int) -> str
     )
     conn.commit()
 
+    # 6. Active lore
+    lore = get_active_lore(conn)
+
     # Build prompt
     prompt = f"""You are the self-reflection engine for an AI persona named "{state['persona_name']}".
-Analyze the accumulated evolution signals and propose bounded adjustments to traits, rules, and goals.
+Analyze the accumulated evolution signals and propose bounded adjustments to traits, rules, goals, and lore.
 
 ## Current Traits
 {json.dumps(state['traits'], indent=2)}
@@ -100,6 +108,9 @@ Analyze the accumulated evolution signals and propose bounded adjustments to tra
 
 ## Active Behavioral Rules
 {json.dumps(state['rules'], indent=2, default=str)}
+
+## Active Lore (self-narrative)
+{json.dumps(lore, indent=2, default=str)}
 
 ## Active Goals
 {json.dumps(goals, indent=2, default=str)}
@@ -129,6 +140,12 @@ Analyze the signals above and identify patterns. Then propose changes in the fol
     {{"action": "update_progress", "goal_id": 123, "progress": 0.75, "notes": "..."}},
     {{"action": "complete", "goal_id": 123}},
     {{"action": "abandon", "goal_id": 123}}
+  ],
+  "lore_changes": [
+    {{"action": "add", "content": "...", "significance": 0.5, "category": "identity"}},
+    {{"action": "evolve", "lore_id": 123, "new_content": "...", "significance": 0.8}},
+    {{"action": "archive", "lore_id": 123}},
+    {{"action": "update_significance", "lore_id": 123, "significance": 0.7}}
   ]
 }}
 ```
@@ -138,6 +155,7 @@ Rules:
 - Only propose changes supported by evidence in the signals.
 - Be conservative — small incremental changes are preferred.
 - Do not deactivate locked rules.
+- Lore represents the persona's self-narrative and evolving identity. Evolve existing lore rather than replacing it when possible. New lore should emerge from observed patterns in interactions.
 - Respond with ONLY the JSON object, no other text.
 """
     return prompt
@@ -157,6 +175,9 @@ def apply_reflection(
         "rules_weight_updated": [],
         "goals_created": [],
         "goals_updated": [],
+        "lore_added": [],
+        "lore_evolved": [],
+        "lore_archived": [],
         "signals_consumed": 0,
         "errors": [],
     }
@@ -256,7 +277,49 @@ def apply_reflection(
         except (ValueError, KeyError) as e:
             summary["errors"].append(f"Goal change error: {e}")
 
-    # 4. Consume all unconsumed signals
+    # 4. Process lore changes
+    for lc in decisions.get("lore_changes", []):
+        action = lc.get("action")
+        try:
+            if action == "add":
+                lore_id = add_lore(
+                    conn,
+                    content=lc["content"],
+                    significance=lc.get("significance", 0.5),
+                    category=lc.get("category", "identity"),
+                    source="reflection",
+                    reflection_id=reflection_id,
+                )
+                summary["lore_added"].append(lore_id)
+            elif action == "evolve":
+                new_id = evolve_lore(
+                    conn,
+                    parent_id=lc["lore_id"],
+                    new_content=lc["new_content"],
+                    significance=lc.get("significance"),
+                    reflection_id=reflection_id,
+                )
+                summary["lore_evolved"].append({"old": lc["lore_id"], "new": new_id})
+            elif action == "archive":
+                archive_lore(
+                    conn,
+                    lore_id=lc["lore_id"],
+                    changed_by="reflection",
+                    reflection_id=reflection_id,
+                )
+                summary["lore_archived"].append(lc["lore_id"])
+            elif action == "update_significance":
+                update_lore_significance(
+                    conn,
+                    lore_id=lc["lore_id"],
+                    new_significance=lc["significance"],
+                    changed_by="reflection",
+                    reflection_id=reflection_id,
+                )
+        except (ValueError, KeyError) as e:
+            summary["errors"].append(f"Lore change error: {e}")
+
+    # 5. Consume all unconsumed signals
     signals = get_unconsumed_signals(conn)
     signal_ids = [s["id"] for s in signals]
     if signal_ids:

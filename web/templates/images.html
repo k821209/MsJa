@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Deevo — Images{% endblock %}
+{% block nav_images %}active{% endblock %}
+
+{% block content %}
+<h1>Images</h1>
+
+{% if avatar %}
+<div class="card avatar-section">
+  <h2>Current Avatar</h2>
+  <img src="/persona/{{ avatar | replace('persona/', '') }}" alt="avatar" class="avatar-large"
+       onerror="this.alt='Image not found'">
+  <div class="avatar-path">{{ avatar }}</div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Upload Image</h2>
+  <form id="upload-form" class="upload-form">
+    <input type="file" id="file-input" accept="image/*">
+    <button type="submit" class="btn">Upload</button>
+  </form>
+  <div id="upload-result"></div>
+</div>
+
+<h2>Image Gallery</h2>
+<div class="image-grid">
+  {% for img in images %}
+  <div class="image-card">
+    <img src="/persona/{{ img.file_path | replace('persona/', '') }}" alt="{{ img.label }}"
+         onerror="this.alt='Not found'; this.style.opacity=0.3">
+    <div class="image-info">
+      <span class="image-label">{{ img.label }}</span>
+      <span class="image-type">{{ img.image_type }}</span>
+    </div>
+    {% if img.description %}
+    <div class="image-desc">{{ img.description }}</div>
+    {% endif %}
+    <button class="btn-copy" data-text="{{ img.file_path }}">copy path</button>
+  </div>
+  {% endfor %}
+  {% if not images %}
+  <div class="empty">No images yet. Add them via MCP tools or upload above.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const file = document.getElementById('file-input').files[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch('/api/upload/image', { method: 'POST', body: form });
+  const data = await res.json();
+  document.getElementById('upload-result').innerHTML =
+    `<div class="success">Uploaded: ${data.path}</div>`;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Deevo{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">DEEVO</div>
+    <a href="/" class="nav-item {% block nav_dashboard %}{% endblock %}">Dashboard</a>
+    <a href="/lore" class="nav-item {% block nav_lore %}{% endblock %}">Lore</a>
+    <a href="/images" class="nav-item {% block nav_images %}{% endblock %}">Images</a>
+    <a href="/memories" class="nav-item {% block nav_memories %}{% endblock %}">Memories</a>
+    <a href="/reflections" class="nav-item {% block nav_reflections %}{% endblock %}">Reflections</a>
+  </nav>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/js/main.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

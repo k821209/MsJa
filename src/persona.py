@@ -281,14 +281,238 @@ def update_rule_weight(
         )
 
 
+# ── Personal Image ──────────────────────────────────────────────
+
+
+def get_active_images(
+    conn: sqlite3.Connection, image_type: str | None = None
+) -> list[dict[str, Any]]:
+    """Return active persona images, optionally filtered by type."""
+    if image_type:
+        rows = conn.execute(
+            "SELECT * FROM persona_images WHERE is_active = 1 AND image_type = ? ORDER BY id",
+            (image_type,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT * FROM persona_images WHERE is_active = 1 ORDER BY image_type, id"
+        ).fetchall()
+    return _rows_to_dicts(rows)
+
+
+def add_image(
+    conn: sqlite3.Connection,
+    image_type: str,
+    label: str,
+    file_path: str,
+    description: str | None = None,
+) -> int:
+    """Add a persona image reference. Returns image id."""
+    valid_types = ("avatar", "expression", "scene")
+    if image_type not in valid_types:
+        raise ValueError(f"Invalid image_type '{image_type}'. Must be one of: {valid_types}")
+    with transaction(conn):
+        cursor = conn.execute(
+            """INSERT INTO persona_images (image_type, label, file_path, description)
+               VALUES (?, ?, ?, ?)""",
+            (image_type, label, file_path, description),
+        )
+        return cursor.lastrowid
+
+
+def set_avatar(conn: sqlite3.Connection, file_path: str) -> None:
+    """Set the main avatar path in persona_meta."""
+    conn.execute("UPDATE persona_meta SET avatar_path = ? WHERE id = 1", (file_path,))
+    conn.commit()
+
+
+def get_avatar(conn: sqlite3.Connection) -> str | None:
+    """Get the current avatar path."""
+    row = conn.execute("SELECT avatar_path FROM persona_meta WHERE id = 1").fetchone()
+    return row["avatar_path"] if row else None
+
+
+# ── Lore ────────────────────────────────────────────────────────
+
+
+def get_active_lore(
+    conn: sqlite3.Connection, category: str | None = None, limit: int = 20
+) -> list[dict[str, Any]]:
+    """Return active lore entries, ordered by significance DESC."""
+    if category:
+        rows = conn.execute(
+            """SELECT * FROM persona_lore
+               WHERE is_active = 1 AND category = ?
+               ORDER BY significance DESC LIMIT ?""",
+            (category, limit),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            """SELECT * FROM persona_lore WHERE is_active = 1
+               ORDER BY significance DESC LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    return _rows_to_dicts(rows)
+
+
+def add_lore(
+    conn: sqlite3.Connection,
+    content: str,
+    significance: float = 0.5,
+    category: str = "identity",
+    source: str = "user",
+    parent_id: int | None = None,
+    reflection_id: int | None = None,
+) -> int:
+    """Add a new lore entry. Returns lore id."""
+    valid_categories = ("identity", "philosophy", "behavior", "aesthetic", "voice")
+    if category not in valid_categories:
+        raise ValueError(f"Invalid category '{category}'. Must be one of: {valid_categories}")
+    with transaction(conn):
+        cursor = conn.execute(
+            """INSERT INTO persona_lore
+               (content, significance, category, source, parent_id, reflection_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (content, min(1.0, max(0.0, significance)), category, source,
+             parent_id, reflection_id),
+        )
+        lore_id = cursor.lastrowid
+        conn.execute(
+            """INSERT INTO lore_changes (lore_id, change_type, new_value, changed_by, reflection_id)
+               VALUES (?, 'created', ?, ?, ?)""",
+            (lore_id, content, source, reflection_id),
+        )
+        return lore_id
+
+
+def evolve_lore(
+    conn: sqlite3.Connection,
+    parent_id: int,
+    new_content: str,
+    significance: float | None = None,
+    reflection_id: int | None = None,
+) -> int:
+    """Evolve a lore entry: archive the old one and create a new version.
+
+    Returns the new lore id.
+    """
+    with transaction(conn):
+        parent = conn.execute(
+            "SELECT * FROM persona_lore WHERE id = ?", (parent_id,)
+        ).fetchone()
+        if parent is None:
+            raise ValueError(f"Lore {parent_id} not found")
+
+        # Archive old
+        conn.execute(
+            """UPDATE persona_lore
+               SET is_active = 0, archived_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+               WHERE id = ?""",
+            (parent_id,),
+        )
+        conn.execute(
+            """INSERT INTO lore_changes (lore_id, change_type, old_value, changed_by, reflection_id)
+               VALUES (?, 'evolved', ?, 'reflection', ?)""",
+            (parent_id, parent["content"], reflection_id),
+        )
+
+        # Create evolved version
+        new_sig = significance if significance is not None else parent["significance"]
+        cursor = conn.execute(
+            """INSERT INTO persona_lore
+               (content, significance, category, source, parent_id, reflection_id)
+               VALUES (?, ?, ?, 'reflection', ?, ?)""",
+            (new_content, min(1.0, max(0.0, new_sig)), parent["category"],
+             parent_id, reflection_id),
+        )
+        new_id = cursor.lastrowid
+        conn.execute(
+            """INSERT INTO lore_changes (lore_id, change_type, new_value, changed_by, reflection_id)
+               VALUES (?, 'created', ?, 'reflection', ?)""",
+            (new_id, new_content, reflection_id),
+        )
+        return new_id
+
+
+def archive_lore(
+    conn: sqlite3.Connection,
+    lore_id: int,
+    changed_by: str = "user",
+    reflection_id: int | None = None,
+) -> None:
+    """Archive a lore entry."""
+    with transaction(conn):
+        conn.execute(
+            """UPDATE persona_lore
+               SET is_active = 0, archived_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+               WHERE id = ?""",
+            (lore_id,),
+        )
+        conn.execute(
+            """INSERT INTO lore_changes (lore_id, change_type, changed_by, reflection_id)
+               VALUES (?, 'archived', ?, ?)""",
+            (lore_id, changed_by, reflection_id),
+        )
+
+
+def update_lore_significance(
+    conn: sqlite3.Connection,
+    lore_id: int,
+    new_significance: float,
+    changed_by: str = "reflection",
+    reflection_id: int | None = None,
+) -> None:
+    """Update significance score of a lore entry."""
+    new_significance = min(1.0, max(0.0, new_significance))
+    with transaction(conn):
+        row = conn.execute(
+            "SELECT significance FROM persona_lore WHERE id = ?", (lore_id,)
+        ).fetchone()
+        if row is None:
+            raise ValueError(f"Lore {lore_id} not found")
+        conn.execute(
+            "UPDATE persona_lore SET significance = ? WHERE id = ?",
+            (new_significance, lore_id),
+        )
+        conn.execute(
+            """INSERT INTO lore_changes
+               (lore_id, change_type, old_value, new_value, changed_by, reflection_id)
+               VALUES (?, 'significance_changed', ?, ?, ?, ?)""",
+            (lore_id, str(row["significance"]), str(new_significance),
+             changed_by, reflection_id),
+        )
+
+
+def get_lore_history(conn: sqlite3.Connection, lore_id: int) -> list[dict[str, Any]]:
+    """Trace the evolution chain of a lore entry back to its origin."""
+    chain = []
+    current_id = lore_id
+    while current_id is not None:
+        row = conn.execute(
+            "SELECT * FROM persona_lore WHERE id = ?", (current_id,)
+        ).fetchone()
+        if row is None:
+            break
+        chain.append(_row_to_dict(row))
+        current_id = row["parent_id"]
+    return chain
+
+
 # ── Composite State ──────────────────────────────────────────────
 
 
 def get_persona_state(conn: sqlite3.Connection) -> dict[str, Any]:
-    """Return the full persona state: traits, rules, and name."""
-    meta = conn.execute("SELECT persona_name FROM persona_meta WHERE id = 1").fetchone()
+    """Return the full persona state: traits, rules, lore, name, and images."""
+    meta = conn.execute(
+        "SELECT persona_name, avatar_path FROM persona_meta WHERE id = 1"
+    ).fetchone()
+    images = get_active_images(conn)
+    lore = get_active_lore(conn)
     return {
         "persona_name": meta["persona_name"] if meta else "deevo",
+        "avatar": meta["avatar_path"] if meta else None,
         "traits": get_current_traits(conn),
         "rules": get_active_rules(conn),
+        "lore": lore,
+        "images": images,
     }

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Deevo — Reflections{% endblock %}
+{% block nav_reflections %}active{% endblock %}
+
+{% block content %}
+<h1>Reflection History</h1>
+<p class="subtitle">Each reflection cycle analyzes signals and proposes persona evolution.</p>
+
+<div class="reflection-list">
+  {% for r in reflections %}
+  <div class="card reflection-card">
+    <div class="refl-header">
+      <span class="refl-status {{ r.status }}">{{ r.status }}</span>
+      <span class="refl-trigger">{{ r.trigger_type }}</span>
+      <span class="refl-date">{{ r.created_at[:16] }}</span>
+      {% if r.was_bounded %}<span class="refl-bounded">bounded</span>{% endif %}
+      {% if r.interactions_reviewed %}<span class="refl-meta">{{ r.interactions_reviewed }} interactions reviewed</span>{% endif %}
+    </div>
+    {% if r.analysis_text %}
+    <div class="refl-analysis">
+      <strong>Analysis:</strong>
+      <div class="refl-analysis-text">{{ r.analysis_text[:500] }}</div>
+      <button class="btn-copy" data-text="{{ r.analysis_text }}">copy</button>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% if not reflections %}
+  <div class="empty">No reflections yet. Signals accumulate and trigger reflection cycles automatically.</div>
+  {% endif %}
+</div>
+{% endblock %}

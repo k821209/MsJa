@@ -22,12 +22,14 @@ echo "[2/4] Installing dependencies..."
 "$VENV_DIR/bin/pip" install -q --upgrade pip
 "$VENV_DIR/bin/pip" install -q -e ".[dev]"
 
-# 3. Initialize database
-echo "[3/4] Initializing persona database..."
+# 3. Initialize database + seed lore
+echo "[3/5] Initializing persona database..."
 "$PYTHON" -c "from src.db import init_db; init_db()"
+echo "[4/5] Seeding initial lore..."
+"$PYTHON" scripts/seed_lore.py
 
-# 4. Generate .mcp.json with absolute paths for this machine
-echo "[4/4] Generating .mcp.json..."
+# 5. Generate .mcp.json with absolute paths for this machine
+echo "[5/5] Generating .mcp.json..."
 cat > "$PROJECT_DIR/.mcp.json" <<EOF
 {
   "mcpServers": {

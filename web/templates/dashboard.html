@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Deevo — Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block content %}
+<h1>{{ state.persona_name }}</h1>
+
+<div class="grid">
+  <!-- Avatar -->
+  <div class="card avatar-card">
+    {% if state.avatar %}
+    <img src="/persona/{{ state.avatar | replace('persona/', '') }}" alt="avatar" class="avatar-img"
+         onerror="this.style.display='none'">
+    {% endif %}
+    <div class="persona-name">{{ state.persona_name }}</div>
+  </div>
+
+  <!-- Traits -->
+  <div class="card">
+    <h2>Traits</h2>
+    {% for key, value in state.traits.items() | sort %}
+    <div class="trait-row">
+      <span class="trait-label">{{ key }}</span>
+      <div class="trait-bar-bg">
+        <div class="trait-bar" style="width: {{ (value * 100) | int }}%"
+             data-trait="{{ key }}" data-value="{{ '%.2f' % value }}">
+        </div>
+      </div>
+      <span class="trait-value">{{ '%.2f' % value }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Signals -->
+  <div class="card">
+    <h2>Pending Signals</h2>
+    <div class="stat-big">{{ signals.count }}</div>
+    <div class="stat-label">signals (magnitude: {{ '%.1f' % signals.total_magnitude }})</div>
+    {% if signals.by_dimension %}
+    <div class="dim-list">
+      {% for dim, info in signals.by_dimension.items() %}
+      <span class="dim-tag">{{ dim }}: {{ info.count }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Memory Stats -->
+  <div class="card">
+    <h2>Memories</h2>
+    <div class="stat-big">{{ memory_stats.total }}</div>
+    <div class="stat-label">total memories</div>
+    <div class="dim-list">
+      {% for type, count in memory_stats.by_type.items() %}
+      <span class="dim-tag">{{ type }}: {{ count }}</span>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Active Lore -->
+  <div class="card wide">
+    <h2>Lore <a href="/lore" class="link-more">more &rarr;</a></h2>
+    {% for entry in state.lore[:5] %}
+    <div class="lore-entry">
+      <span class="lore-sig">{{ '%.2f' % entry.significance }}</span>
+      <span class="lore-cat">{{ entry.category }}</span>
+      <span class="lore-text">{{ entry.content }}</span>
+      <button class="btn-copy" data-text="{{ entry.content }}">copy</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Rules -->
+  <div class="card wide">
+    <h2>Active Rules</h2>
+    {% for rule in state.rules %}
+    <div class="rule-row">
+      {% if rule.is_locked %}<span class="lock">&#128274;</span>{% endif %}
+      <span class="rule-priority">[{{ rule.priority }}]</span>
+      <span class="rule-text">{{ rule.rule_text }}</span>
+      <button class="btn-copy" data-text="{{ rule.rule_text }}">copy</button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Recent Reflections -->
+  <div class="card wide">
+    <h2>Recent Reflections <a href="/reflections" class="link-more">more &rarr;</a></h2>
+    {% for r in reflections %}
+    <div class="reflection-row">
+      <span class="refl-status {{ r.status }}">{{ r.status }}</span>
+      <span class="refl-trigger">{{ r.trigger_type }}</span>
+      <span class="refl-date">{{ r.created_at[:16] }}</span>
+      {% if r.was_bounded %}<span class="refl-bounded">bounded</span>{% endif %}
+    </div>
+    {% endfor %}
+    {% if not reflections %}
+    <div class="empty">No reflections yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

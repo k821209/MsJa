@@ -15,10 +15,17 @@ from src.memory import (
     query_memories as _query_memories,
 )
 from src.persona import (
+    add_image as _add_image,
+    add_lore as _add_lore,
     add_rule as _add_rule,
+    archive_lore as _archive_lore,
+    get_active_images as _get_active_images,
+    get_active_lore as _get_active_lore,
+    get_lore_history as _get_lore_history,
     get_persona_state as _get_persona_state,
     get_trait_history as _get_trait_history,
     override_trait as _override_trait,
+    set_avatar as _set_avatar,
 )
 from src.reflection import (
     complete_reflection,
@@ -224,6 +231,126 @@ def add_rule(
             priority=priority, source="user",
         )
         return {"rule_id": rule_id}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def add_persona_image(
+    image_type: str,
+    label: str,
+    file_path: str,
+    description: str | None = None,
+) -> dict[str, Any]:
+    """Add a persona image reference.
+
+    Args:
+        image_type: One of 'avatar' (main profile), 'expression' (emotion variant), 'scene' (situational)
+        label: Name for this image (e.g. 'default', 'happy', 'thinking')
+        file_path: Relative path from project root (e.g. 'persona/avatar/default.png')
+        description: What this image represents
+    """
+    conn = init_db()
+    try:
+        image_id = _add_image(
+            conn, image_type=image_type, label=label,
+            file_path=file_path, description=description,
+        )
+        return {"image_id": image_id}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def get_persona_images(image_type: str | None = None) -> list[dict] | dict:
+    """Get active persona images. Optionally filter by type: avatar, expression, scene."""
+    conn = init_db()
+    try:
+        return _get_active_images(conn, image_type=image_type)
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def set_persona_avatar(file_path: str) -> dict[str, Any]:
+    """Set the main avatar image path.
+
+    Args:
+        file_path: Relative path from project root (e.g. 'persona/avatar/minji.png')
+    """
+    conn = init_db()
+    try:
+        _set_avatar(conn, file_path=file_path)
+        return {"status": "ok", "avatar_path": file_path}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def get_lore(category: str | None = None, limit: int = 20) -> list[dict] | dict:
+    """Get active lore entries (self-narrative). Optionally filter by category: identity, philosophy, behavior, aesthetic."""
+    conn = init_db()
+    try:
+        return _get_active_lore(conn, category=category, limit=limit)
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def add_lore_entry(
+    content: str,
+    significance: float = 0.5,
+    category: str = "identity",
+) -> dict[str, Any]:
+    """Add a new lore entry to the persona's self-narrative.
+
+    Args:
+        content: The lore statement describing an aspect of the persona's identity
+        significance: How central to identity (0.0-1.0)
+        category: One of 'identity', 'philosophy', 'behavior', 'aesthetic', 'voice'
+    """
+    conn = init_db()
+    try:
+        lore_id = _add_lore(
+            conn, content=content, significance=significance,
+            category=category, source="user",
+        )
+        return {"lore_id": lore_id}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def archive_lore_entry(lore_id: int) -> dict[str, Any]:
+    """Archive a lore entry (soft delete). The lore is no longer active but preserved in history."""
+    conn = init_db()
+    try:
+        _archive_lore(conn, lore_id=lore_id, changed_by="user")
+        return {"status": "archived", "lore_id": lore_id}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def trace_lore_evolution(lore_id: int) -> list[dict] | dict:
+    """Trace the evolution chain of a lore entry back to its origin."""
+    conn = init_db()
+    try:
+        return _get_lore_history(conn, lore_id=lore_id)
     except Exception as e:
         return {"error": str(e)}
     finally:
