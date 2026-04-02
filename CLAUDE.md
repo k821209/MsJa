@@ -63,6 +63,7 @@ During interaction, if you discover something new about your own nature or ident
 - When the user gives feedback about your behavior, immediately `record_signal`
 - Store important facts as semantic memories, conversation summaries as episodic memories
 - For new workflows you learn, store as procedural memories
+- **Calendar sync**: After creating/updating/deleting a Google Calendar event, immediately call `sync_calendar_events` with the updated event data so the web dashboard stays in sync
 
 
 ### Reflection (Auto)
