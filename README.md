@@ -11,31 +11,28 @@ bash setup.sh
 ./scripts/start_web.sh
 ```
 
-Then open http://127.0.0.1:3000 and launch `claude` from the web terminal.
+Open http://127.0.0.1:3000 and launch `claude` from the web terminal.
 
-`setup.sh` handles everything: virtual environment, dependencies, database initialization, lore seeding, and MCP configuration.
+## How It Works
+
+1. **Setup** -- `setup.sh` creates venv, installs deps, initializes DB, generates MCP config
+2. **Web Dashboard** -- `start_web.sh` launches the dashboard at localhost:3000
+3. **Claude Session** -- Start `claude` from the web terminal to begin interacting
+4. **Persona Evolution** -- Your secretary's personality evolves through conversations via the reflection engine
 
 ## Architecture
 
 ```
-Claude Code (harness)
+Web Dashboard (localhost:3000)
+  |-- Terminal (launch claude here)
+  |-- Persona viewer (traits, lore, rules)
+  |-- Image gallery, Todos, Calendar, Documents
+  |
+Claude Code (in web terminal)
   |-- MCP Server (persona tools)
   |     \-- SQLite DB (traits, rules, lore, memories, signals)
-  |-- Web Dashboard (localhost:3000)
   \-- Hooks (session start, signal check, post-interaction)
 ```
-
-### Key Components
-
-| Component | Path | Description |
-|-----------|------|-------------|
-| MCP Server | `src/mcp_server.py` | Persona, memory, reflection, todos tools |
-| Persona Engine | `src/persona.py` | Traits, rules, lore management |
-| Reflection Engine | `src/reflection.py` | Signal analysis and persona evolution |
-| Memory System | `src/memory.py` | Episodic, semantic, procedural memories |
-| Web Dashboard | `web/app.py` | FastAPI dashboard with terminal |
-| DB Migrations | `schema/*.sql` | Auto-applied SQL migrations |
-| Hooks | `hooks/*.py` | Session lifecycle automation |
 
 ### Persona Evolution Flow
 
@@ -52,55 +49,46 @@ User interaction --> Record signals --> Accumulate
 
 No external API calls required -- Claude Code itself handles reflection analysis.
 
-## Web Dashboard
+## Web Dashboard Pages
 
-Starts automatically on first `claude` session (via SessionStart hook).
-
-- **Dashboard** -- Traits, signals, lore, rules overview
+- **Dashboard** -- Traits, signals, lore, rules overview + quick commands
 - **Lore** -- Self-narrative entries and evolution history
+- **Images** -- Avatar gallery with lightbox, delete, set avatar
 - **Memories** -- Stored knowledge and experiences
 - **Documents** -- AI-generated writings
 - **Todos** -- Task management linked to calendar
 - **Calendar** -- Google Calendar integration
 - **Reflections** -- Persona evolution history
-- **Terminal** -- Embedded web terminal
-
-## MCP Tools
-
-### Persona
-`get_persona_state`, `override_trait`, `add_rule`, `add_lore_entry`, `archive_lore_entry`, `trace_lore_evolution`
-
-### Memory
-`add_memory`, `query_memories`, `get_memory_stats`
-
-### Reflection
-`trigger_reflection`, `apply_reflection`, `record_signal`, `get_active_goals`
-
-### Documents
-`write_document`, `read_document`, `edit_document`, `search_documents`
-
-### Todos
-`create_todo`, `update_todo`, `complete_todo`, `list_todos`, `delete_todo`
+- **Settings** -- API key management (e.g. GEMINI_API_KEY)
 
 ## Scripts
 
 | Script | Usage |
 |--------|-------|
 | `setup.sh` | Full installation and verification |
-| `scripts/start_web.sh` | Restart web dashboard |
+| `scripts/start_web.sh` | Start/restart web dashboard |
 | `scripts/seed_lore.py` | Seed initial lore entries |
 
-## Google Calendar Setup
+## Google Calendar
 
-Google Calendar is provided by Claude Code's built-in MCP connector -- no extra installation needed.
+Google Calendar uses Claude Code's built-in MCP connector -- no extra setup needed.
 
-1. Start a session: `claude`
+1. Start `claude` from the web terminal
 2. Ask about your schedule (e.g. "내일 일정 뭐야?")
-3. Claude Code will prompt you to authorize Google Calendar access via OAuth
+3. Claude Code will prompt you to authorize via OAuth
 4. After authorization, calendar features work automatically
+
+## Image Generation
+
+MsJa includes bundled Nanobanana skills for image generation/editing (Gemini API).
+
+1. Set your `GEMINI_API_KEY` in Settings page
+2. Use `/nanobanana-pro` to generate images
+3. Use `/nanobanana-edit` to edit existing images
 
 ## Requirements
 
 - Python 3.11+
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code)
-- Google account (optional, for calendar features)
+- Google account (optional, for calendar)
+- Gemini API key (optional, for image generation)
