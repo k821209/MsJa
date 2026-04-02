@@ -79,7 +79,7 @@ python3 .claude/skills/nanobanana-pro/scripts/generate.py "modern minimalist log
 
 ## Persona Image Rules (IMPORTANT)
 
-1. **Avatar = Reference**: When generating persona variant images, consider using nanobanana-edit with the current avatar (`get_persona_state` → `avatar` field) as input for consistent appearance.
+1. **Avatar = Reference**: Check `get_persona_state` → `avatar` field. If an avatar exists, use nanobanana-edit with it as input for consistent appearance. If no avatar is set (default), generate from scratch with nanobanana-pro.
 2. **Auto-register**: After successful generation, call `add_persona_image` MCP tool with the output path, a label, and image_type to register in the web dashboard Images page.
 
 ## Error Handling
