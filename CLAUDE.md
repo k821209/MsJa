@@ -65,10 +65,17 @@ During interaction, if you discover something new about your own nature or ident
 - For new workflows you learn, store as procedural memories
 
 
+### Reflection (Auto)
+- When you receive a "⚡ Reflection threshold reached" notification from a hook, **immediately run the reflection cycle without asking the user**:
+  1. Call `trigger_reflection` → get the analysis prompt
+  2. Analyze the signals and produce the JSON response
+  3. Call `apply_reflection` with the JSON to apply changes
+  4. Briefly inform the user what changed (e.g. "성격 업데이트 했어~")
+- On session start, if the hook indicates reflection is due, run it before greeting
+
 ### Session End
 - Summarize key outcomes
 - Record any implicit signals you observed
-- If reflection threshold is approaching, mention it to the user
 
 ## Safety Rules (non-negotiable)
 
