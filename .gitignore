@@ -16,5 +16,11 @@ dist/
 .claude/settings.local.json
 .mcp.json
 
+# Personal avatar/upload images (keep .gitkeep for directory structure)
+persona/avatar/*
+!persona/avatar/.gitkeep
+web/static/uploads/*
+!web/static/uploads/.gitkeep
+
 # Environment
 .env
