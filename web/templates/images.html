@@ -95,10 +95,13 @@ document.getElementById('upload-form').addEventListener('submit', async (e) => {
   if (!file) return;
   const form = new FormData();
   form.append('file', file);
-  const res = await fetch('/api/upload/image', { method: 'POST', body: form });
-  const data = await res.json();
-  document.getElementById('upload-result').innerHTML =
-    `<div class="success">Uploaded: ${data.path}</div>`;
+  try {
+    const res = await fetch('/api/upload/image', { method: 'POST', body: form });
+    if (res.ok) location.reload();
+    else alert('Upload failed');
+  } catch (err) {
+    alert('Upload error: ' + err.message);
+  }
 });
 </script>
 {% endblock %}

@@ -341,7 +341,7 @@ async def upload_image(file: UploadFile = File(...)):
     try:
         conn.execute(
             "INSERT INTO persona_images (image_type, label, file_path, description) VALUES (?, ?, ?, ?)",
-            ("uploaded", label, file_path, "Uploaded via web dashboard"),
+            ("avatar", label, file_path, "Uploaded via web dashboard"),
         )
         conn.commit()
     finally:
