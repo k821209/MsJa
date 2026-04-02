@@ -27,6 +27,15 @@ from src.persona import (
     override_trait as _override_trait,
     set_avatar as _set_avatar,
 )
+from src.documents import (
+    archive_document as _archive_document,
+    create_document as _create_document,
+    get_document as _get_document,
+    get_document_stats as _get_document_stats,
+    get_document_versions as _get_document_versions,
+    list_documents as _list_documents,
+    update_document as _update_document,
+)
 from src.reflection import (
     complete_reflection,
     run_reflection,
@@ -351,6 +360,130 @@ def trace_lore_evolution(lore_id: int) -> list[dict] | dict:
     conn = init_db()
     try:
         return _get_lore_history(conn, lore_id=lore_id)
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+# ── Documents ──────────────────────────────────────────────────
+
+
+@mcp.tool()
+def write_document(
+    title: str,
+    content: str,
+    doc_type: str = "note",
+    language: str = "ko",
+    tags: str | None = None,
+) -> dict[str, Any]:
+    """Write and save a document. Content should be markdown.
+
+    Args:
+        title: Document title
+        content: Document body (markdown)
+        doc_type: One of 'note', 'draft', 'summary', 'report', 'letter', 'creative', 'plan', 'log'
+        language: Language code (default: 'ko')
+        tags: Comma-separated tags
+    """
+    conn = init_db()
+    try:
+        tag_list = _parse_tags(tags)
+        doc_id = _create_document(
+            conn, title=title, content=content, doc_type=doc_type,
+            language=language, tags=tag_list,
+        )
+        return {"document_id": doc_id, "title": title, "doc_type": doc_type}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def read_document(document_id: int) -> dict[str, Any]:
+    """Read a saved document by its ID."""
+    conn = init_db()
+    try:
+        doc = _get_document(conn, document_id)
+        if doc is None:
+            return {"error": f"Document {document_id} not found"}
+        return doc
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def edit_document(
+    document_id: int,
+    title: str | None = None,
+    content: str | None = None,
+    status: str | None = None,
+    tags: str | None = None,
+    change_summary: str | None = None,
+) -> dict[str, Any]:
+    """Edit an existing document. Creates a version snapshot before updating.
+
+    Args:
+        document_id: ID of the document to edit
+        title: New title (optional)
+        content: New content as markdown (optional)
+        status: New status: 'draft', 'final', 'archived' (optional)
+        tags: Comma-separated tags to replace existing tags (optional)
+        change_summary: Description of what changed (optional)
+    """
+    conn = init_db()
+    try:
+        tag_list = _parse_tags(tags)
+        doc = _update_document(
+            conn, document_id=document_id, title=title, content=content,
+            status=status, tags=tag_list, edited_by="ai", change_summary=change_summary,
+        )
+        return doc
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def search_documents(
+    doc_type: str | None = None,
+    status: str | None = None,
+    tags: str | None = None,
+    query: str | None = None,
+    limit: int = 20,
+) -> list[dict] | dict:
+    """Search saved documents by type, status, tags, or content.
+
+    Args:
+        doc_type: Filter by type (note, draft, summary, report, letter, creative, plan, log)
+        status: Filter by status (draft, final, archived)
+        tags: Comma-separated tags (AND logic)
+        query: Search in title and content
+        limit: Max results (default 20)
+    """
+    conn = init_db()
+    try:
+        tag_list = _parse_tags(tags)
+        return _list_documents(
+            conn, doc_type=doc_type, status=status,
+            tags=tag_list, query=query, limit=limit,
+        )
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
+def get_document_history(document_id: int) -> list[dict] | dict:
+    """Get version history for a document."""
+    conn = init_db()
+    try:
+        return _get_document_versions(conn, document_id)
     except Exception as e:
         return {"error": str(e)}
     finally:

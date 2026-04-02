@@ -30,6 +30,14 @@ from src.persona import (
     get_trait_definitions,
     get_trait_history,
 )
+from src.documents import (
+    get_document as _get_doc,
+    get_document_stats as _get_doc_stats,
+    get_document_versions as _get_doc_versions,
+    list_documents as _list_docs,
+    update_document as _update_doc,
+    archive_document as _archive_doc,
+)
 from src.signals import get_signal_summary
 from src.reflection import get_reflection_history
 
@@ -169,6 +177,75 @@ async def upload_image(file: UploadFile = File(...)):
     with open(dest, "wb") as f:
         shutil.copyfileobj(file.file, f)
     return {"path": f"/static/uploads/{file.filename}"}
+
+
+# ── Documents ──────────────────────────────────────────────────
+
+
+@app.get("/documents", response_class=HTMLResponse)
+async def documents_page(
+    request: Request,
+    type: str | None = None,
+    status: str | None = None,
+    tag: str | None = None,
+    q: str | None = None,
+):
+    conn = _conn()
+    try:
+        tags = [t.strip() for t in tag.split(",")] if tag else None
+        docs = _list_docs(conn, doc_type=type, status=status, tags=tags, query=q, limit=50)
+        stats = _get_doc_stats(conn)
+        return templates.TemplateResponse(request=request, name="documents.html", context={
+            "request": request,
+            "documents": docs,
+            "stats": stats,
+            "filters": {"type": type, "status": status, "tag": tag, "q": q},
+        })
+    finally:
+        conn.close()
+
+
+@app.get("/documents/{doc_id}", response_class=HTMLResponse)
+async def document_detail(request: Request, doc_id: int):
+    conn = _conn()
+    try:
+        doc = _get_doc(conn, doc_id)
+        if doc is None:
+            return HTMLResponse("<h1>Document not found</h1>", status_code=404)
+        versions = _get_doc_versions(conn, doc_id)
+        return templates.TemplateResponse(request=request, name="document_detail.html", context={
+            "request": request,
+            "doc": doc,
+            "versions": versions,
+        })
+    finally:
+        conn.close()
+
+
+@app.post("/api/documents/{doc_id}/status")
+async def api_update_doc_status(doc_id: int, request: Request):
+    body = await request.json()
+    new_status = body.get("status")
+    conn = _conn()
+    try:
+        if new_status == "archived":
+            _archive_doc(conn, doc_id)
+        else:
+            _update_doc(conn, doc_id, status=new_status, edited_by="user", change_summary=f"Status → {new_status}")
+        return {"status": "ok"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.get("/api/documents/{doc_id}/versions")
+async def api_doc_versions(doc_id: int):
+    conn = _conn()
+    try:
+        return _get_doc_versions(conn, doc_id)
+    finally:
+        conn.close()
 
 
 if __name__ == "__main__":

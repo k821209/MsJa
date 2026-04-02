@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Deevo — Documents{% endblock %}
+{% block nav_documents %}active{% endblock %}
+
+{% block content %}
+<h1>Documents</h1>
+<p class="subtitle">AI가 작성하고 저장한 문서들</p>
+
+{% if stats.total > 0 %}
+<div class="card">
+  <div class="stats-row">
+    <span class="dim-tag">Total: {{ stats.total }}</span>
+    <span class="dim-tag">Words: {{ stats.total_words }}</span>
+    {% for type, count in stats.by_type.items() %}
+    <span class="dim-tag">{{ type }}: {{ count }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<form class="filter-bar" method="GET" action="/documents">
+  <select name="type">
+    <option value="">All types</option>
+    {% for t in ['note','draft','summary','report','letter','creative','plan','log'] %}
+    <option value="{{ t }}" {{ 'selected' if filters.type == t }}>{{ t }}</option>
+    {% endfor %}
+  </select>
+  <select name="status">
+    <option value="">Active</option>
+    <option value="draft" {{ 'selected' if filters.status == 'draft' }}>Draft</option>
+    <option value="final" {{ 'selected' if filters.status == 'final' }}>Final</option>
+    <option value="archived" {{ 'selected' if filters.status == 'archived' }}>Archived</option>
+  </select>
+  <input type="text" name="tag" placeholder="Tags" value="{{ filters.tag or '' }}">
+  <input type="text" name="q" placeholder="Search..." value="{{ filters.q or '' }}">
+  <button type="submit" class="btn">Filter</button>
+</form>
+
+<div class="doc-list">
+  {% for doc in documents %}
+  <a href="/documents/{{ doc.id }}" class="card doc-card-link">
+    <div class="doc-card">
+      <div class="doc-header">
+        <span class="doc-type type-{{ doc.doc_type }}">{{ doc.doc_type }}</span>
+        <span class="doc-status status-{{ doc.status }}">{{ doc.status }}</span>
+        <span class="doc-date">{{ doc.updated_at[:10] }}</span>
+        <span class="doc-words">{{ doc.word_count }} words</span>
+      </div>
+      <div class="doc-title">{{ doc.title }}</div>
+      <div class="doc-preview">{{ doc.content[:200] }}{% if doc.content|length > 200 %}...{% endif %}</div>
+      {% if doc.tags %}
+      <div class="doc-tags">
+        {% for tag in doc.tags %}
+        <span class="tag">{{ tag }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+  {% if not documents %}
+  <div class="empty">아직 문서가 없습니다. Claude Code에서 AI가 write_document로 문서를 작성하면 여기에 표시됩니다.</div>
+  {% endif %}
+</div>
+{% endblock %}

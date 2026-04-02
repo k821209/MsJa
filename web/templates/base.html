@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Deevo{% endblock %}</title>
   <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
   <nav class="sidebar">
@@ -13,6 +14,7 @@
     <a href="/lore" class="nav-item {% block nav_lore %}{% endblock %}">Lore</a>
     <a href="/images" class="nav-item {% block nav_images %}{% endblock %}">Images</a>
     <a href="/memories" class="nav-item {% block nav_memories %}{% endblock %}">Memories</a>
+    <a href="/documents" class="nav-item {% block nav_documents %}{% endblock %}">Documents</a>
     <a href="/reflections" class="nav-item {% block nav_reflections %}{% endblock %}">Reflections</a>
   </nav>
   <main class="content">

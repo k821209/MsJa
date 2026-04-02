@@ -273,3 +273,70 @@ h2 { font-size: 18px; margin-bottom: 12px; color: var(--text2); }
 
 .link-more { font-size: 13px; color: var(--accent); text-decoration: none; margin-left: 8px; }
 .empty { color: var(--text2); font-style: italic; padding: 20px; }
+
+/* Documents */
+.doc-list { display: flex; flex-direction: column; gap: 8px; }
+.doc-card-link { text-decoration: none; color: inherit; }
+.doc-card-link:hover .doc-card { border-color: var(--accent); }
+.doc-card { transition: border-color 0.15s; }
+.doc-header { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.doc-title { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+.doc-preview { font-size: 13px; color: var(--text2); line-height: 1.4; white-space: pre-wrap; }
+.doc-tags { margin-top: 8px; }
+.doc-words { font-size: 12px; color: var(--text2); margin-left: auto; }
+.doc-date { font-size: 12px; color: var(--text2); }
+
+.doc-type { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+.type-note { background: #1f3a5f; color: var(--accent); }
+.type-draft { background: #3f3a1f; color: var(--orange); }
+.type-summary { background: #2a3f1f; color: var(--green); }
+.type-report { background: #2f1f3f; color: var(--purple); }
+.type-letter { background: #1f3a5f; color: var(--accent); }
+.type-creative { background: #3f1f2f; color: #ff7eb3; }
+.type-plan { background: #2a3f1f; color: var(--green); }
+.type-log { background: var(--surface2); color: var(--text2); }
+
+.doc-status { padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+.status-draft { background: #3f3a1f; color: var(--orange); }
+.status-final { background: #2a3f1f; color: var(--green); }
+.status-archived { background: var(--surface2); color: var(--text2); }
+
+/* Document detail */
+.doc-detail-header { margin-bottom: 8px; }
+.doc-detail-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0; }
+.doc-detail-title { font-size: 28px; margin-bottom: 12px; }
+.doc-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.back-link { color: var(--accent); text-decoration: none; font-size: 14px; }
+.back-link:hover { text-decoration: underline; }
+
+.doc-body { padding: 24px; }
+.doc-raw { background: var(--bg); padding: 16px; border-radius: var(--radius); font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; color: var(--text2); }
+.hidden { display: none; }
+
+/* Markdown rendered content */
+.markdown-body { font-size: 15px; line-height: 1.8; color: var(--text); }
+.markdown-body h1 { font-size: 24px; margin: 24px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.markdown-body h2 { font-size: 20px; margin: 20px 0 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.markdown-body h3 { font-size: 17px; margin: 16px 0 8px; }
+.markdown-body p { margin: 8px 0; }
+.markdown-body ul, .markdown-body ol { padding-left: 24px; margin: 8px 0; }
+.markdown-body li { margin: 4px 0; }
+.markdown-body blockquote { border-left: 3px solid var(--accent); padding-left: 16px; color: var(--text2); margin: 12px 0; }
+.markdown-body code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.markdown-body pre { background: var(--bg); padding: 16px; border-radius: var(--radius); overflow-x: auto; margin: 12px 0; }
+.markdown-body pre code { background: none; padding: 0; }
+.markdown-body table { border-collapse: collapse; width: 100%; margin: 12px 0; }
+.markdown-body th, .markdown-body td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+.markdown-body th { background: var(--surface2); }
+.markdown-body a { color: var(--accent); }
+.markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.markdown-body img { max-width: 100%; border-radius: var(--radius); }
+
+/* Version history */
+.version-list { margin-top: 8px; }
+.version-row { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.version-num { font-family: monospace; font-weight: 600; color: var(--accent); min-width: 30px; }
+.version-by { font-size: 12px; color: var(--text2); }
+.version-date { font-size: 12px; color: var(--text2); }
+.version-summary { font-size: 13px; color: var(--text2); flex: 1; }
+.modal-wide { max-width: 800px; }

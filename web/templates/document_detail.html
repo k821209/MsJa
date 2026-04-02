@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} — Deevo{% endblock %}
+{% block nav_documents %}active{% endblock %}
+
+{% block content %}
+<div class="doc-detail-header">
+  <a href="/documents" class="back-link">&larr; Documents</a>
+  <div class="doc-detail-meta">
+    <span class="doc-type type-{{ doc.doc_type }}">{{ doc.doc_type }}</span>
+    <span class="doc-status status-{{ doc.status }}">{{ doc.status }}</span>
+    <span class="doc-date">Created: {{ doc.created_at[:16] }}</span>
+    <span class="doc-date">Updated: {{ doc.updated_at[:16] }}</span>
+    <span class="doc-words">{{ doc.word_count }} words</span>
+  </div>
+  {% if doc.tags %}
+  <div class="doc-tags">
+    {% for tag in doc.tags %}
+    <span class="tag">{{ tag }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+
+<h1 class="doc-detail-title">{{ doc.title }}</h1>
+
+<!-- Actions -->
+<div class="doc-actions">
+  <button class="btn-copy" data-text="{{ doc.content }}" id="copy-content">Copy Content</button>
+  <button class="btn-copy" data-text="{{ doc.content }}" id="copy-md">Copy Markdown</button>
+  <button class="btn-sm" onclick="toggleRaw()">Toggle Raw</button>
+  {% if doc.status == 'draft' %}
+  <button class="btn" onclick="setStatus({{ doc.id }}, 'final')">Mark Final</button>
+  {% endif %}
+  {% if doc.status != 'archived' %}
+  <button class="btn-sm" onclick="setStatus({{ doc.id }}, 'archived')" style="color:var(--red)">Archive</button>
+  {% endif %}
+</div>
+
+<!-- Rendered markdown -->
+<div class="card doc-body">
+  <div id="doc-rendered" class="markdown-body"></div>
+  <pre id="doc-raw" class="doc-raw hidden">{{ doc.content }}</pre>
+</div>
+
+<!-- Version history -->
+{% if versions|length > 1 %}
+<div class="card">
+  <h2>Version History ({{ versions|length }} versions)</h2>
+  <div class="version-list">
+    {% for v in versions %}
+    <div class="version-row">
+      <span class="version-num">v{{ v.version }}</span>
+      <span class="version-by">{{ v.edited_by }}</span>
+      <span class="version-date">{{ v.created_at[:16] }}</span>
+      {% if v.change_summary %}
+      <span class="version-summary">{{ v.change_summary }}</span>
+      {% endif %}
+      <button class="btn-sm" onclick="showVersion({{ v.version }})">view</button>
+      <button class="btn-copy" data-text="{{ v.content }}">copy</button>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Version modal -->
+<div id="version-modal" class="modal hidden">
+  <div class="modal-content modal-wide">
+    <button class="modal-close" onclick="closeVersionModal()">&times;</button>
+    <h2 id="version-title"></h2>
+    <div id="version-rendered" class="markdown-body"></div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Render markdown
+const rawContent = document.getElementById('doc-raw').textContent;
+document.getElementById('doc-rendered').innerHTML = marked.parse(rawContent);
+
+// Toggle raw/rendered
+function toggleRaw() {
+  document.getElementById('doc-rendered').classList.toggle('hidden');
+  document.getElementById('doc-raw').classList.toggle('hidden');
+}
+
+// Status change
+async function setStatus(docId, status) {
+  if (status === 'archived' && !confirm('Archive this document?')) return;
+  await fetch(`/api/documents/${docId}/status`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({status}),
+  });
+  location.reload();
+}
+
+// Version viewer
+const versions = {{ versions | tojson }};
+function showVersion(num) {
+  const v = versions.find(x => x.version === num);
+  if (!v) return;
+  document.getElementById('version-title').textContent = `v${v.version} — ${v.title} (${v.edited_by}, ${v.created_at.slice(0,16)})`;
+  document.getElementById('version-rendered').innerHTML = marked.parse(v.content);
+  document.getElementById('version-modal').classList.remove('hidden');
+}
+function closeVersionModal() {
+  document.getElementById('version-modal').classList.add('hidden');
+}
+</script>
+{% endblock %}

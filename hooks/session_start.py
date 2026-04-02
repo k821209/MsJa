@@ -96,7 +96,7 @@ def main():
             row("└─ 로어 추가     : add_lore_entry"),
             f"╚{border}╝",
             "",
-            "[INSTRUCTION: Show the box above to the user as your first message, then greet them according to your current trait values.]",
+            "[INSTRUCTION: Copy and paste the ENTIRE box above (from ╔ to ╚) verbatim as your first output. Do NOT shorten, summarize, or redesign it. The user needs to see the Web dashboard URL. After the box, greet them according to your current trait values.]",
         ]
 
         # ── Persona state (for Claude's context) ──
