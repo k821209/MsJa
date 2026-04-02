@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_inner.html" %}
 {% block title %}Deevo — Memories{% endblock %}
 {% block nav_memories %}active{% endblock %}
 
@@ -33,7 +33,7 @@
 </div>
 
 <!-- Filters -->
-<form class="filter-bar" method="GET" action="/memories">
+<form class="filter-bar" method="GET" action="/page/memories">
   <select name="type">
     <option value="">All types</option>
     <option value="episodic" {{ 'selected' if filters.type == 'episodic' }}>Episodic</option>
@@ -74,7 +74,7 @@
     {% if mem.tags %}
     <div class="memory-tags">
       {% for tag in mem.tags %}
-      <a href="/memories?tag={{ tag }}" class="tag">{{ tag }}</a>
+      <a href="/page/memories?tag={{ tag }}" class="tag">{{ tag }}</a>
       {% endfor %}
     </div>
     {% endif %}

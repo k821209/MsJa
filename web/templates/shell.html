@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deevo</title>
+  <link rel="stylesheet" href="/static/css/shell.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm/css/xterm.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit/lib/addon-fit.min.js"></script>
+</head>
+<body>
+  <nav class="sidebar">
+    <div class="logo">DEEVO</div>
+    <a href="#" class="nav-item active" data-page="/" id="nav-dashboard">Dashboard</a>
+    <a href="#" class="nav-item" data-page="/lore" id="nav-lore">Lore</a>
+    <a href="#" class="nav-item" data-page="/images" id="nav-images">Images</a>
+    <a href="#" class="nav-item" data-page="/memories" id="nav-memories">Memories</a>
+    <a href="#" class="nav-item" data-page="/documents" id="nav-documents">Documents</a>
+    <a href="#" class="nav-item" data-page="/reflections" id="nav-reflections">Reflections</a>
+    <div class="sidebar-spacer"></div>
+    <button class="nav-item terminal-toggle" onclick="toggleTerminal()">
+      <span id="term-icon">▶</span> Terminal
+    </button>
+  </nav>
+
+  <div class="main-wrapper">
+    <iframe id="content-frame" src="/page/" class="content-frame"></iframe>
+
+    <aside class="terminal-panel hidden" id="terminal-panel">
+      <div class="terminal-header">
+        <span>Terminal</span>
+        <div class="terminal-actions">
+          <button class="btn-sm" onclick="newTerminal()">new</button>
+          <button class="btn-sm" onclick="runClaude()">claude</button>
+          <button class="btn-sm" onclick="toggleTerminal()">✕</button>
+        </div>
+      </div>
+      <div id="terminal-container"></div>
+    </aside>
+  </div>
+
+  <script>
+  // Navigation — change iframe src, not full page
+  document.querySelectorAll('.nav-item[data-page]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const page = link.dataset.page;
+      document.getElementById('content-frame').src = '/page' + page;
+      // Update active state
+      document.querySelectorAll('.nav-item[data-page]').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+
+  // Listen for navigation from inside iframe (for links like document detail)
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'navigate') {
+      document.getElementById('content-frame').src = '/page' + e.data.path;
+    }
+  });
+  </script>
+  <script src="/static/js/terminal.js"></script>
+</body>
+</html>

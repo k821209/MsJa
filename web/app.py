@@ -73,11 +73,22 @@ def _conn():
     return init_db()
 
 
-# ── Pages ──────────────────────────────────────────────────────
+# ── Shell (outer frame) ────────────────────────────────────────
 
 
 @app.get("/", response_class=HTMLResponse)
-async def dashboard(request: Request):
+async def shell(request: Request):
+    return templates.TemplateResponse(request=request, name="shell.html", context={
+        "request": request,
+    })
+
+
+# ── Pages (served inside iframe via /page/ prefix) ─────────────
+
+
+@app.get("/page/", response_class=HTMLResponse)
+@app.get("/page", response_class=HTMLResponse)
+async def page_dashboard(request: Request):
     conn = _conn()
     try:
         state = get_persona_state(conn)
@@ -97,7 +108,7 @@ async def dashboard(request: Request):
         conn.close()
 
 
-@app.get("/lore", response_class=HTMLResponse)
+@app.get("/page/lore", response_class=HTMLResponse)
 async def lore_page(request: Request):
     conn = _conn()
     try:
@@ -110,7 +121,7 @@ async def lore_page(request: Request):
         conn.close()
 
 
-@app.get("/images", response_class=HTMLResponse)
+@app.get("/page/images", response_class=HTMLResponse)
 async def images_page(request: Request):
     conn = _conn()
     try:
@@ -125,7 +136,7 @@ async def images_page(request: Request):
         conn.close()
 
 
-@app.get("/memories", response_class=HTMLResponse)
+@app.get("/page/memories", response_class=HTMLResponse)
 async def memories_page(request: Request, type: str | None = None, tag: str | None = None, q: str | None = None):
     conn = _conn()
     try:
@@ -142,7 +153,7 @@ async def memories_page(request: Request, type: str | None = None, tag: str | No
         conn.close()
 
 
-@app.get("/reflections", response_class=HTMLResponse)
+@app.get("/page/reflections", response_class=HTMLResponse)
 async def reflections_page(request: Request):
     conn = _conn()
     try:
@@ -279,7 +290,7 @@ async def upload_image(file: UploadFile = File(...)):
 # ── Documents ──────────────────────────────────────────────────
 
 
-@app.get("/documents", response_class=HTMLResponse)
+@app.get("/page/documents", response_class=HTMLResponse)
 async def documents_page(
     request: Request,
     type: str | None = None,
@@ -302,7 +313,7 @@ async def documents_page(
         conn.close()
 
 
-@app.get("/documents/{doc_id}", response_class=HTMLResponse)
+@app.get("/page/documents/{doc_id}", response_class=HTMLResponse)
 async def document_detail(request: Request, doc_id: int):
     conn = _conn()
     try:

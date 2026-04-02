@@ -1,0 +1,125 @@
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --accent: #58a6ff;
+  --green: #3fb950;
+  --red: #f85149;
+  --radius: 8px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.logo {
+  font-size: 24px;
+  font-weight: 700;
+  padding: 0 20px 20px;
+  color: var(--accent);
+  letter-spacing: 2px;
+}
+
+.nav-item {
+  display: block;
+  padding: 10px 20px;
+  color: var(--text2);
+  text-decoration: none;
+  transition: all 0.15s;
+  font-size: 14px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); border-left: 3px solid var(--accent); }
+
+.sidebar-spacer { flex: 1; }
+
+.terminal-toggle {
+  border-top: 1px solid var(--border) !important;
+  font-size: 14px;
+}
+.terminal-toggle:hover { color: var(--accent); }
+
+/* Main wrapper */
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Content iframe */
+.content-frame {
+  flex: 1;
+  border: none;
+  background: var(--bg);
+  min-width: 0;
+}
+
+/* Terminal panel */
+.terminal-panel {
+  width: 50%;
+  min-width: 400px;
+  max-width: 800px;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.terminal-panel.hidden { display: none; }
+
+.terminal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.terminal-actions { display: flex; gap: 4px; }
+.terminal-actions .btn-sm {
+  background: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 12px;
+}
+.terminal-actions .btn-sm:hover { color: var(--text); border-color: var(--accent); }
+
+#terminal-container {
+  flex: 1;
+  padding: 4px;
+  overflow: hidden;
+}
+#terminal-container .xterm { height: 100%; }

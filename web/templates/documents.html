@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_inner.html" %}
 {% block title %}Deevo — Documents{% endblock %}
 {% block nav_documents %}active{% endblock %}
 
@@ -18,7 +18,7 @@
 </div>
 {% endif %}
 
-<form class="filter-bar" method="GET" action="/documents">
+<form class="filter-bar" method="GET" action="/page/documents">
   <select name="type">
     <option value="">All types</option>
     {% for t in ['note','draft','summary','report','letter','creative','plan','log'] %}

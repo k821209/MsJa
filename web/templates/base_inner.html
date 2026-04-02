@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Deevo{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    /* Override for iframe mode — no sidebar, full width */
+    body { display: block; }
+    .content { margin-left: 0; padding: 24px; max-width: 100%; }
+  </style>
+</head>
+<body>
+  <main class="content">
+    {% block content %}{% endblock %}
+  </main>
+  <script src="/static/js/main.js"></script>
+  <script>
+  // Intercept link clicks to navigate parent shell
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a[href]');
+    if (!link) return;
+    const href = link.getAttribute('href');
+    // Internal links only
+    if (href && href.startsWith('/') && !href.startsWith('/static') && !href.startsWith('/api') && !href.startsWith('/persona')) {
+      e.preventDefault();
+      // Navigate within iframe by changing own location
+      window.location.href = '/page' + href;
+    }
+  });
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
