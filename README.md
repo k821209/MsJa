@@ -1,12 +1,12 @@
-# Deevo -- Private AI Secretary
+# MsJa -- Private AI Secretary
 
 Self-evolving AI secretary powered by Claude Code. Personality traits, behavioral rules, and self-narrative (lore) evolve over time based on user interactions.
 
 ## Quick Start
 
 ```bash
-git clone <repo-url>
-cd deevo.ai.persona
+git clone https://github.com/k821209/MsJa.git
+cd MsJa
 bash setup.sh
 claude
 ```
@@ -93,7 +93,7 @@ Starts automatically on first `claude` session (via SessionStart hook).
 Google Calendar is provided by Claude Code's built-in MCP connector -- no extra installation needed.
 
 1. Start a session: `claude`
-2. Ask Deevo about your schedule (e.g. "내일 일정 뭐야?")
+2. Ask about your schedule (e.g. "내일 일정 뭐야?")
 3. Claude Code will prompt you to authorize Google Calendar access via OAuth
 4. After authorization, calendar features work automatically
 
