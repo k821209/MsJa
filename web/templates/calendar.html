@@ -23,7 +23,7 @@
         <tr>
           {% for cell in row %}
           <td class="month-cell{% if not cell.in_month %} dim{% endif %}{% if cell.is_today %} today{% endif %}{% if cell.date == selected_date %} selected{% endif %}"
-              onclick="window.location.href='/page/calendar?date={{ cell.date }}&week_offset={{ week_offset }}'">
+              onclick="window.location.href='/calendar?date={{ cell.date }}&week_offset={{ week_offset }}'">
             {{ cell.day }}
             {% if cell.has_events %}<span class="dot"></span>{% endif %}
           </td>
@@ -37,17 +37,17 @@
   <!-- Week view with navigation -->
   <div class="card cal-week">
     <div class="week-nav">
-      <a href="/page/calendar?week_offset={{ week_offset - 1 }}" class="btn-sm">&larr; Prev</a>
+      <a href="/calendar?week_offset={{ week_offset - 1 }}" class="btn-sm">&larr; Prev</a>
       <h2>{{ week_label }}</h2>
-      <a href="/page/calendar?week_offset={{ week_offset + 1 }}" class="btn-sm">Next &rarr;</a>
+      <a href="/calendar?week_offset={{ week_offset + 1 }}" class="btn-sm">Next &rarr;</a>
       {% if week_offset != 0 %}
-      <a href="/page/calendar?week_offset=0" class="btn-sm">Today</a>
+      <a href="/calendar?week_offset=0" class="btn-sm">Today</a>
       {% endif %}
     </div>
     <div class="week-grid">
       {% for date, events in week.items() %}
       <div class="week-day {% if date == selected_date %}active{% endif %}"
-           onclick="window.location.href='/page/calendar?date={{ date }}&week_offset={{ week_offset }}'">
+           onclick="window.location.href='/calendar?date={{ date }}&week_offset={{ week_offset }}'">
         <div class="week-day-header">
           <span class="week-day-name">{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][loop.index0] }}</span>
           <span class="week-day-date">{{ date[5:] }}</span>
