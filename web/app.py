@@ -18,7 +18,14 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.db import init_db
-from src.memory import get_memory_stats as _get_memory_stats, query_memories as _query_memories
+from src.memory import (
+    add_memory as _add_mem,
+    archive_memory as _archive_mem,
+    delete_memory as _delete_mem,
+    get_memory as _get_mem,
+    get_memory_stats as _get_memory_stats,
+    query_memories as _query_memories,
+)
 from src.persona import (
     get_active_images,
     get_active_lore,
@@ -167,6 +174,89 @@ async def api_lore_history(lore_id: int):
     conn = _conn()
     try:
         return get_lore_history(conn, lore_id=lore_id)
+    finally:
+        conn.close()
+
+
+# ── Memory CRUD API ────────────────────────────────────────────
+
+
+@app.post("/api/memories")
+async def api_create_memory(request: Request):
+    body = await request.json()
+    conn = _conn()
+    try:
+        tags = None
+        if body.get("tags"):
+            tags = [t.strip() for t in body["tags"].split(",") if t.strip()]
+        mem_id = _add_mem(
+            conn,
+            memory_type=body["memory_type"],
+            content=body["content"],
+            importance=body.get("importance", 0.5),
+            tags=tags,
+        )
+        return {"memory_id": mem_id}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.put("/api/memories/{mem_id}")
+async def api_update_memory(mem_id: int, request: Request):
+    body = await request.json()
+    conn = _conn()
+    try:
+        # Update content
+        if "content" in body:
+            conn.execute(
+                "UPDATE memories SET content = ? WHERE id = ?",
+                (body["content"], mem_id),
+            )
+        # Update importance
+        if "importance" in body:
+            conn.execute(
+                "UPDATE memories SET importance = ? WHERE id = ?",
+                (body["importance"], mem_id),
+            )
+        # Update tags
+        if "tags" in body:
+            conn.execute("DELETE FROM memory_tags WHERE memory_id = ?", (mem_id,))
+            if body["tags"]:
+                for tag in [t.strip() for t in body["tags"].split(",") if t.strip()]:
+                    conn.execute(
+                        "INSERT OR IGNORE INTO memory_tags (memory_id, tag) VALUES (?, ?)",
+                        (mem_id, tag),
+                    )
+        conn.commit()
+        return {"status": "ok"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.post("/api/memories/{mem_id}/archive")
+async def api_archive_memory(mem_id: int):
+    conn = _conn()
+    try:
+        _archive_mem(conn, mem_id)
+        return {"status": "archived"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.delete("/api/memories/{mem_id}")
+async def api_delete_memory(mem_id: int):
+    conn = _conn()
+    try:
+        _delete_mem(conn, mem_id)
+        return {"status": "deleted"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
     finally:
         conn.close()
 

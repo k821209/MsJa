@@ -15,6 +15,24 @@
   </div>
 </div>
 
+<!-- Add Memory -->
+<div class="card">
+  <h2>Add Memory</h2>
+  <form id="add-memory-form" class="form-grid">
+    <select name="memory_type" required>
+      <option value="semantic">Semantic (facts)</option>
+      <option value="episodic">Episodic (events)</option>
+      <option value="procedural">Procedural (workflows)</option>
+    </select>
+    <input type="text" name="tags" placeholder="Tags (comma-separated)">
+    <input type="number" name="importance" value="0.5" min="0" max="1" step="0.1" style="width:80px">
+    <textarea name="content" placeholder="Memory content..." rows="2" required></textarea>
+    <button type="submit" class="btn">Add</button>
+  </form>
+  <div id="add-result"></div>
+</div>
+
+<!-- Filters -->
 <form class="filter-bar" method="GET" action="/memories">
   <select name="type">
     <option value="">All types</option>
@@ -27,15 +45,32 @@
   <button type="submit" class="btn">Filter</button>
 </form>
 
+<!-- Memory List -->
 <div class="memory-list">
   {% for mem in memories %}
-  <div class="card memory-card">
+  <div class="card memory-card" id="memory-{{ mem.id }}">
     <div class="memory-header">
       <span class="memory-type type-{{ mem.memory_type }}">{{ mem.memory_type }}</span>
       <span class="memory-importance">importance: {{ '%.2f' % mem.importance }}</span>
+      <span class="memory-confidence">confidence: {{ '%.2f' % mem.confidence }}</span>
       <span class="memory-date">{{ mem.created_at[:10] }}</span>
+      <span class="memory-id">#{{ mem.id }}</span>
     </div>
-    <div class="memory-content">{{ mem.content }}</div>
+
+    <!-- View mode -->
+    <div class="memory-view" id="view-{{ mem.id }}">
+      <div class="memory-content">{{ mem.content }}</div>
+    </div>
+
+    <!-- Edit mode (hidden) -->
+    <div class="memory-edit hidden" id="edit-{{ mem.id }}">
+      <textarea class="edit-content" rows="3">{{ mem.content }}</textarea>
+      <div class="edit-row">
+        <input type="text" class="edit-tags" value="{{ mem.tags | join(', ') if mem.tags else '' }}" placeholder="Tags">
+        <input type="number" class="edit-importance" value="{{ mem.importance }}" min="0" max="1" step="0.1" style="width:80px">
+      </div>
+    </div>
+
     {% if mem.tags %}
     <div class="memory-tags">
       {% for tag in mem.tags %}
@@ -46,6 +81,11 @@
     <div class="memory-footer">
       <span class="memory-meta">accessed: {{ mem.access_count }}x</span>
       <button class="btn-copy" data-text="{{ mem.content }}">copy</button>
+      <button class="btn-sm btn-edit" onclick="toggleEdit({{ mem.id }})">edit</button>
+      <button class="btn-sm btn-save hidden" id="save-{{ mem.id }}" onclick="saveMemory({{ mem.id }})">save</button>
+      <button class="btn-sm btn-cancel hidden" id="cancel-{{ mem.id }}" onclick="cancelEdit({{ mem.id }})">cancel</button>
+      <button class="btn-sm" onclick="archiveMemory({{ mem.id }})" style="color:var(--orange)">archive</button>
+      <button class="btn-sm" onclick="deleteMemory({{ mem.id }})" style="color:var(--red)">delete</button>
     </div>
   </div>
   {% endfor %}
@@ -53,4 +93,78 @@
   <div class="empty">No memories found.</div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Add memory
+document.getElementById('add-memory-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const body = {
+    memory_type: form.memory_type.value,
+    content: form.content.value,
+    importance: parseFloat(form.importance.value),
+    tags: form.tags.value || null,
+  };
+  const res = await fetch('/api/memories', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (data.error) {
+    document.getElementById('add-result').innerHTML = `<span style="color:var(--red)">${data.error}</span>`;
+  } else {
+    document.getElementById('add-result').innerHTML = `<span style="color:var(--green)">Added memory #${data.memory_id}</span>`;
+    form.content.value = '';
+    form.tags.value = '';
+    setTimeout(() => location.reload(), 800);
+  }
+});
+
+// Toggle edit mode
+function toggleEdit(id) {
+  document.getElementById(`view-${id}`).classList.add('hidden');
+  document.getElementById(`edit-${id}`).classList.remove('hidden');
+  document.getElementById(`save-${id}`).classList.remove('hidden');
+  document.getElementById(`cancel-${id}`).classList.remove('hidden');
+}
+function cancelEdit(id) {
+  document.getElementById(`view-${id}`).classList.remove('hidden');
+  document.getElementById(`edit-${id}`).classList.add('hidden');
+  document.getElementById(`save-${id}`).classList.add('hidden');
+  document.getElementById(`cancel-${id}`).classList.add('hidden');
+}
+
+// Save edited memory
+async function saveMemory(id) {
+  const card = document.getElementById(`memory-${id}`);
+  const content = card.querySelector('.edit-content').value;
+  const tags = card.querySelector('.edit-tags').value;
+  const importance = parseFloat(card.querySelector('.edit-importance').value);
+  const res = await fetch(`/api/memories/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ content, tags, importance }),
+  });
+  const data = await res.json();
+  if (data.error) { alert(data.error); return; }
+  location.reload();
+}
+
+// Archive
+async function archiveMemory(id) {
+  if (!confirm('Archive this memory?')) return;
+  await fetch(`/api/memories/${id}/archive`, { method: 'POST' });
+  document.getElementById(`memory-${id}`).remove();
+}
+
+// Delete
+async function deleteMemory(id) {
+  if (!confirm('Permanently delete this memory? This cannot be undone.')) return;
+  await fetch(`/api/memories/${id}`, { method: 'DELETE' });
+  document.getElementById(`memory-${id}`).remove();
+}
+</script>
 {% endblock %}
