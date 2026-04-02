@@ -4,7 +4,7 @@
 
 {% block content %}
 <h1>Documents</h1>
-<p class="subtitle">AI가 작성하고 저장한 문서들</p>
+<p class="subtitle">Documents written and saved by the AI secretary</p>
 
 {% if stats.total > 0 %}
 <div class="card">
@@ -59,7 +59,7 @@
   </a>
   {% endfor %}
   {% if not documents %}
-  <div class="empty">아직 문서가 없습니다. Claude Code에서 AI가 write_document로 문서를 작성하면 여기에 표시됩니다.</div>
+  <div class="empty">No documents yet. Use write_document in Claude Code to create one.</div>
   {% endif %}
 </div>
 {% endblock %}
