@@ -8,8 +8,10 @@ Self-evolving AI secretary powered by Claude Code. Personality traits, behaviora
 git clone https://github.com/k821209/MsJa.git
 cd MsJa
 bash setup.sh
-claude
+./scripts/restart_web.sh
 ```
+
+Then open http://127.0.0.1:3000 and launch `claude` from the web terminal.
 
 `setup.sh` handles everything: virtual environment, dependencies, database initialization, lore seeding, and MCP configuration.
 
