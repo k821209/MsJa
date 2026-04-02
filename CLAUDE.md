@@ -64,10 +64,6 @@ During interaction, if you discover something new about your own nature or ident
 - Store important facts as semantic memories, conversation summaries as episodic memories
 - For new workflows you learn, store as procedural memories
 
-### Image Generation
-- When generating persona images with nanobanana-edit, always use the **current avatar** as the reference image (`get_persona_state` → `avatar` field)
-- Do NOT maintain a separate reference image — the avatar IS the reference
-- Register generated images to the persona system via `add_persona_image` after creation
 
 ### Session End
 - Summarize key outcomes

@@ -77,11 +77,10 @@ python3 .claude/skills/nanobanana-pro/scripts/generate.py "modern minimalist log
 - **Thinking Mode**: Advanced reasoning for complex prompts
 - **SynthID Watermark**: All outputs include invisible watermark
 
-## Post-Generation (IMPORTANT)
+## Persona Image Rules (IMPORTANT)
 
-After successful image generation, register the image to the persona system:
-1. Call `add_persona_image` MCP tool with the output path, a label, and image_type ("generated")
-2. This makes the image visible in the web dashboard Images page
+1. **Avatar = Reference**: When generating persona variant images, consider using nanobanana-edit with the current avatar (`get_persona_state` → `avatar` field) as input for consistent appearance.
+2. **Auto-register**: After successful generation, call `add_persona_image` MCP tool with the output path, a label, and image_type to register in the web dashboard Images page.
 
 ## Error Handling
 

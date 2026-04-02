@@ -59,11 +59,10 @@ python3 .claude/skills/nanobanana-edit/scripts/edit.py \
 2. **Preserve context**: Add "Keep everything else exactly the same" for targeted edits
 3. **Iterative editing**: Make small changes step by step for complex edits
 
-## Post-Edit (IMPORTANT)
+## Persona Image Rules (IMPORTANT)
 
-After successful image edit, register the result to the persona system:
-1. Call `add_persona_image` MCP tool with the output path, a label, and image_type ("generated")
-2. This makes the image visible in the web dashboard Images page
+1. **Avatar = Reference**: When editing persona images, always use the current avatar as input. Get it from `get_persona_state` → `avatar` field. Do NOT maintain a separate reference image.
+2. **Auto-register**: After successful edit, call `add_persona_image` MCP tool with the output path, a label, and image_type to register in the web dashboard Images page.
 
 ## Error Handling
 
