@@ -183,22 +183,75 @@ async def reflections_page(request: Request):
 
 
 @app.get("/page/calendar", response_class=HTMLResponse)
-async def calendar_page(request: Request, date: str | None = None):
-    from datetime import datetime
+async def calendar_page(request: Request, date: str | None = None, week_offset: int = 0):
+    from datetime import datetime, timedelta
+    from src.calendar import get_events_range
     conn = _conn()
     try:
-        today = _get_today(conn)
-        week = _get_week(conn)
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        selected_date = date or today_str
+
+        # Week navigation: offset from current week
+        today_dt = datetime.now()
+        monday = today_dt - timedelta(days=today_dt.weekday()) + timedelta(weeks=week_offset)
+        sunday = monday + timedelta(days=6)
+        week_start = monday.strftime("%Y-%m-%d")
+        week_end = (sunday + timedelta(days=1)).strftime("%Y-%m-%d")
+        week_events = get_events_range(conn, week_start, week_end)
+
+        # Group by date
+        by_date: dict[str, list] = {}
+        for e in week_events:
+            d = e["start_time"][:10]
+            by_date.setdefault(d, []).append(e)
+        for i in range(7):
+            day = (monday + timedelta(days=i)).strftime("%Y-%m-%d")
+            by_date.setdefault(day, [])
+        week = dict(sorted(by_date.items()))
+
+        # Month calendar data
+        month_dt = monday if week_offset != 0 else today_dt
+        first_of_month = month_dt.replace(day=1)
+        if month_dt.month == 12:
+            last_of_month = month_dt.replace(year=month_dt.year + 1, month=1, day=1) - timedelta(days=1)
+        else:
+            last_of_month = month_dt.replace(month=month_dt.month + 1, day=1) - timedelta(days=1)
+
+        month_start = first_of_month - timedelta(days=first_of_month.weekday())  # pad to Monday
+        month_end = last_of_month + timedelta(days=6 - last_of_month.weekday() + 1)
+        month_events = get_events_range(conn, month_start.strftime("%Y-%m-%d"), month_end.strftime("%Y-%m-%d"))
+        month_event_dates = set(e["start_time"][:10] for e in month_events)
+
+        # Build month grid (weeks of days)
+        month_grid = []
+        cursor = month_start
+        while cursor < month_end:
+            row = []
+            for _ in range(7):
+                row.append({
+                    "date": cursor.strftime("%Y-%m-%d"),
+                    "day": cursor.day,
+                    "in_month": cursor.month == first_of_month.month,
+                    "is_today": cursor.strftime("%Y-%m-%d") == today_str,
+                    "has_events": cursor.strftime("%Y-%m-%d") in month_event_dates,
+                })
+                cursor += timedelta(days=1)
+            month_grid.append(row)
+
         upcoming = _get_upcoming(conn, limit=15)
-        selected_date = date or datetime.now().strftime("%Y-%m-%d")
-        selected_events = _get_events_date(conn, selected_date) if date else today
+        selected_events = _get_events_date(conn, selected_date)
+
         return templates.TemplateResponse(request=request, name="calendar.html", context={
             "request": request,
-            "today_events": today,
+            "today_events": selected_events,
             "week": week,
             "upcoming": upcoming,
             "selected_date": selected_date,
             "selected_events": selected_events,
+            "week_offset": week_offset,
+            "week_label": f"{monday.strftime('%m/%d')} — {sunday.strftime('%m/%d')}",
+            "month_label": first_of_month.strftime("%Y년 %m월"),
+            "month_grid": month_grid,
         })
     finally:
         conn.close()

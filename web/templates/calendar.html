@@ -1,18 +1,53 @@
 {% extends "base_inner.html" %}
-{% block title %}Deevo — Calendar{% endblock %}
+{% block title %}MsJa — Calendar{% endblock %}
 
 {% block content %}
 <h1>Calendar</h1>
-<p class="subtitle">Events synced from Google Calendar. Ask Deevo to sync: <code>sync my calendar for this week</code></p>
+<p class="subtitle">Events synced from Google Calendar</p>
 
 <div class="cal-layout">
-  <!-- Week view -->
+
+  <!-- Month mini calendar -->
+  <div class="card cal-month">
+    <h2>{{ month_label }}</h2>
+    <table class="month-grid">
+      <thead>
+        <tr>
+          {% for d in ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'] %}
+          <th>{{ d }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in month_grid %}
+        <tr>
+          {% for cell in row %}
+          <td class="month-cell{% if not cell.in_month %} dim{% endif %}{% if cell.is_today %} today{% endif %}{% if cell.date == selected_date %} selected{% endif %}"
+              onclick="window.location.href='/page/calendar?date={{ cell.date }}&week_offset={{ week_offset }}'">
+            {{ cell.day }}
+            {% if cell.has_events %}<span class="dot"></span>{% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Week view with navigation -->
   <div class="card cal-week">
-    <h2>This Week</h2>
+    <div class="week-nav">
+      <a href="/page/calendar?week_offset={{ week_offset - 1 }}" class="btn-sm">&larr; Prev</a>
+      <h2>{{ week_label }}</h2>
+      <a href="/page/calendar?week_offset={{ week_offset + 1 }}" class="btn-sm">Next &rarr;</a>
+      {% if week_offset != 0 %}
+      <a href="/page/calendar?week_offset=0" class="btn-sm">Today</a>
+      {% endif %}
+    </div>
     <div class="week-grid">
       {% for date, events in week.items() %}
       <div class="week-day {% if date == selected_date %}active{% endif %}"
-           onclick="window.location.href='/page/calendar?date={{ date }}'">
+           onclick="window.location.href='/page/calendar?date={{ date }}&week_offset={{ week_offset }}'">
         <div class="week-day-header">
           <span class="week-day-name">{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][loop.index0] }}</span>
           <span class="week-day-date">{{ date[5:] }}</span>
@@ -52,38 +87,22 @@
         <div class="event-details">
           <div class="event-title">{{ e.summary }}</div>
           {% if e.location %}
-          <div class="event-location">📍 {{ e.location }}</div>
+          <div class="event-location">{{ e.location }}</div>
           {% endif %}
           {% if e.description %}
           <div class="event-desc">{{ e.description[:200] }}</div>
           {% endif %}
-          {% if e.attendees %}
-          <div class="event-attendees">
-            {% for att in e.attendees[:5] %}
-            <span class="attendee status-{{ att.get('responseStatus', 'needsAction') }}">
-              {{ att.get('displayName') or att.get('email', '')[:20] }}
-            </span>
-            {% endfor %}
-            {% if e.attendees | length > 5 %}
-            <span class="attendee">+{{ e.attendees | length - 5 }} more</span>
-            {% endif %}
-          </div>
-          {% endif %}
         </div>
         <div class="event-actions">
-          {% if e.response_status %}
-          <span class="rsvp rsvp-{{ e.response_status }}">{{ e.response_status }}</span>
-          {% endif %}
           {% if e.html_link %}
           <a href="{{ e.html_link }}" target="_blank" class="btn-sm">open</a>
           {% endif %}
-          <button class="btn-copy" data-text="{{ e.summary }} ({{ e.start_time[:16] }})">copy</button>
         </div>
       </div>
       {% endfor %}
     </div>
     {% else %}
-    <div class="empty">No events for this date. Sync calendar via Claude Code.</div>
+    <div class="empty">No events for this date.</div>
     {% endif %}
   </div>
 
@@ -96,9 +115,6 @@
         <span class="upcoming-date">{{ e.start_time[:10] }}</span>
         <span class="upcoming-time">{{ e.start_time[11:16] if not e.all_day else 'all day' }}</span>
         <span class="upcoming-title">{{ e.summary }}</span>
-        {% if e.response_status %}
-        <span class="rsvp rsvp-{{ e.response_status }}">{{ e.response_status }}</span>
-        {% endif %}
       </div>
       {% endfor %}
       {% if not upcoming %}
@@ -107,4 +123,24 @@
     </div>
   </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.week-nav h2 { margin: 0; flex: 1; text-align: center; }
+.week-nav .btn-sm { text-decoration: none; padding: 4px 12px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; color: var(--text); background: var(--surface2); }
+.week-nav .btn-sm:hover { background: var(--accent); color: #000; }
+
+.cal-month { min-width: 280px; }
+.month-grid { width: 100%; border-collapse: collapse; }
+.month-grid th { font-size: 0.75rem; color: var(--text2); padding: 4px; text-align: center; }
+.month-cell { text-align: center; padding: 6px; cursor: pointer; font-size: 0.85rem; position: relative; border-radius: 4px; }
+.month-cell:hover { background: var(--surface2); }
+.month-cell.dim { color: var(--text2); opacity: 0.4; }
+.month-cell.today { background: var(--accent); color: #000; font-weight: 700; }
+.month-cell.selected { outline: 2px solid var(--accent); }
+.month-cell .dot { display: block; width: 4px; height: 4px; background: var(--green); border-radius: 50%; margin: 2px auto 0; }
+.month-cell.today .dot { background: #000; }
+</style>
 {% endblock %}
