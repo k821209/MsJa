@@ -41,8 +41,9 @@ function initTerminal() {
 
   term = new Terminal({
     cursorBlink: true,
+    allowProposedApi: true,
     fontSize: 13,
-    fontFamily: "'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace",
+    fontFamily: "'Noto Sans Mono', 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace",
     scrollback: 5000,
     theme: {
       background: '#0d1117',
@@ -70,6 +71,13 @@ function initTerminal() {
 
   fitAddon = new FitAddon.FitAddon();
   term.loadAddon(fitAddon);
+
+  // Unicode 11 addon for correct CJK (Korean/Japanese/Chinese) character widths
+  if (typeof Unicode11Addon !== 'undefined') {
+    const u11 = new Unicode11Addon.Unicode11Addon();
+    term.loadAddon(u11);
+    term.unicode.activeVersion = '11';
+  }
 
   term.open(container);
 
