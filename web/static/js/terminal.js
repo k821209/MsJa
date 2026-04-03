@@ -169,3 +169,24 @@ document.addEventListener('keydown', (e) => {
     toggleTerminal();
   }
 });
+
+// Send command to terminal from iframe (e.g. quick-start buttons)
+function sendToTerminal(command) {
+  if (!termOpen) toggleTerminal();
+  // Wait for terminal + websocket to be ready, then send
+  const trySend = () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: 'input', data: command + '\n' }));
+    } else {
+      setTimeout(trySend, 200);
+    }
+  };
+  // Small delay to let terminal open if it wasn't
+  setTimeout(trySend, termOpen ? 0 : 500);
+}
+
+window.addEventListener('message', (e) => {
+  if (e.data && e.data.type === 'terminal-send' && e.data.command) {
+    sendToTerminal(e.data.command);
+  }
+});
