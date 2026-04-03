@@ -23,28 +23,21 @@ PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_i
 echo "✓ Python $PY_VER detected"
 
 # ── 2. Virtual environment ──
+# Always recreate if venv is broken — moving/renaming the project
+# breaks all shebangs (python, pip, etc.) inside .venv/bin/
 NEED_VENV=0
 if [ ! -d "$VENV_DIR" ]; then
     NEED_VENV=1
-elif ! "$PYTHON" --version &>/dev/null 2>&1; then
-    # venv exists but python is broken (e.g. project was moved/renamed)
-    echo "⚠ Virtual environment is broken (bad interpreter). Recreating..."
-    rm -rf "$VENV_DIR"
+elif ! "$PYTHON" -c "import sys" &>/dev/null 2>&1; then
+    echo "⚠ venv python is broken. Recreating..."
     NEED_VENV=1
-else
-    # Check if venv python points to the right place
-    VENV_REAL=$(head -1 "$VENV_DIR/bin/python3" 2>/dev/null || true)
-    if [ -f "$VENV_DIR/pyvenv.cfg" ]; then
-        VENV_HOME=$(grep "^home" "$VENV_DIR/pyvenv.cfg" | cut -d= -f2 | tr -d ' ')
-        if [ ! -x "$VENV_HOME/python3" ]; then
-            echo "⚠ Virtual environment references missing Python. Recreating..."
-            rm -rf "$VENV_DIR"
-            NEED_VENV=1
-        fi
-    fi
+elif ! "$PYTHON" -m pip --version &>/dev/null 2>&1; then
+    echo "⚠ venv pip is broken. Recreating..."
+    NEED_VENV=1
 fi
 
 if [ $NEED_VENV -eq 1 ]; then
+    rm -rf "$VENV_DIR"
     echo "→ Creating virtual environment..."
     python3 -m venv "$VENV_DIR"
 else
@@ -53,8 +46,8 @@ fi
 
 # ── 3. Install dependencies ──
 echo "→ Installing dependencies..."
-"$VENV_DIR/bin/pip" install -q --upgrade pip
-"$VENV_DIR/bin/pip" install -q -e ".[dev]"
+"$PYTHON" -m pip install -q --upgrade pip
+"$PYTHON" -m pip install -q -e ".[dev]"
 echo "✓ Dependencies installed"
 
 # ── 4. Initialize database ──
