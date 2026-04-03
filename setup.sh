@@ -23,11 +23,32 @@ PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_i
 echo "✓ Python $PY_VER detected"
 
 # ── 2. Virtual environment ──
+NEED_VENV=0
 if [ ! -d "$VENV_DIR" ]; then
+    NEED_VENV=1
+elif ! "$PYTHON" --version &>/dev/null 2>&1; then
+    # venv exists but python is broken (e.g. project was moved/renamed)
+    echo "⚠ Virtual environment is broken (bad interpreter). Recreating..."
+    rm -rf "$VENV_DIR"
+    NEED_VENV=1
+else
+    # Check if venv python points to the right place
+    VENV_REAL=$(head -1 "$VENV_DIR/bin/python3" 2>/dev/null || true)
+    if [ -f "$VENV_DIR/pyvenv.cfg" ]; then
+        VENV_HOME=$(grep "^home" "$VENV_DIR/pyvenv.cfg" | cut -d= -f2 | tr -d ' ')
+        if [ ! -x "$VENV_HOME/python3" ]; then
+            echo "⚠ Virtual environment references missing Python. Recreating..."
+            rm -rf "$VENV_DIR"
+            NEED_VENV=1
+        fi
+    fi
+fi
+
+if [ $NEED_VENV -eq 1 ]; then
     echo "→ Creating virtual environment..."
     python3 -m venv "$VENV_DIR"
 else
-    echo "✓ Virtual environment exists"
+    echo "✓ Virtual environment OK"
 fi
 
 # ── 3. Install dependencies ──
