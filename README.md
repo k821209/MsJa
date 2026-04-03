@@ -1,12 +1,12 @@
-# MsJa -- Private AI Secretary
+# Ms. Ja -- Private AI Secretary
 
 Self-evolving AI secretary powered by Claude Code. Personality traits, behavioral rules, and self-narrative (lore) evolve over time based on user interactions.
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/k821209/MsJa.git
-cd MsJa
+git clone https://github.com/k821209/Ms. Ja.git
+cd Ms. Ja
 bash setup.sh
 ./scripts/start_web.sh
 ```
@@ -80,7 +80,7 @@ Google Calendar uses Claude Code's built-in MCP connector -- no extra setup need
 
 ## Image Generation
 
-MsJa includes bundled Nanobanana skills for image generation/editing (Gemini API).
+Ms. Ja includes bundled Nanobanana skills for image generation/editing (Gemini API).
 
 1. Set your `GEMINI_API_KEY` in Settings page
 2. Use `/nanobanana-pro` to generate images
