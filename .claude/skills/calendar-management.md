@@ -26,6 +26,18 @@ You are managing the user's calendar. Follow these steps:
 1. Create calendar events with reminder notifications
 2. Store reminder context as a procedural memory for recurring patterns
 
+## Auto-Sync Protocol
+
+After **any** calendar action (create, update, delete, or first calendar interaction of a session):
+
+1. Call `gcal_list_events` for the current month (timeMin: 1st of month, timeMax: last of month, timeZone: Asia/Seoul)
+2. Call `sync_calendar_events` with the full event list to update the local DB
+3. This ensures the web dashboard always reflects the latest Google Calendar state
+
+On **session start** or when a **new user first asks about calendar**:
+1. Perform the full month sync above so all existing events appear on the dashboard
+2. This is critical — without it, new users see an empty calendar despite having Google Calendar events
+
 ## After Any Calendar Action
 - Record an outcome signal if the scheduling went well or had issues
 - Store any new preferences learned as semantic memories

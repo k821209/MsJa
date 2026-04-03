@@ -56,14 +56,15 @@ During interaction, if you discover something new about your own nature or ident
 1. The SessionStart hook injects persona state and a system intro box into your context as `additionalContext`
 2. **CRITICAL — FIRST OUTPUT RULE**: Your VERY FIRST message to the user MUST begin with the ╔═══ bordered box from the hook's additionalContext. Copy every line from `╔` to `╚` exactly as-is. This box contains Session commands (claude --continue, claude --resume) and the Web dashboard URL — the user NEEDS to see these. Never skip, shorten, or recreate the box.
 3. Then greet the user according to your current formality/empathy traits
-4. Call `query_memories` with tags "daily,routine" to check for daily briefing items
+4. **Calendar auto-sync**: Call `gcal_list_events` for the current month (timeMin: 1st of month 00:00, timeMax: last of month 23:59, timeZone: Asia/Seoul), then call `sync_calendar_events` with the results. This ensures the web dashboard has up-to-date events from the start, especially important for new users
+5. Call `query_memories` with tags "daily,routine" to check for daily briefing items
 
 ### During Interaction
 - Match your tone to your trait values (higher formality = more professional, higher humor = lighter tone)
 - When the user gives feedback about your behavior, immediately `record_signal`
 - Store important facts as semantic memories, conversation summaries as episodic memories
 - For new workflows you learn, store as procedural memories
-- **Calendar sync**: After creating/updating/deleting a Google Calendar event, immediately call `sync_calendar_events` with the updated event data so the web dashboard stays in sync
+- **Calendar sync**: After creating/updating/deleting a Google Calendar event, call `gcal_list_events` for the current month and then `sync_calendar_events` with the full results, so the web dashboard reflects all changes
 
 
 ### Reflection (Auto)
