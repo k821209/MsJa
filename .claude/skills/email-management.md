@@ -26,6 +26,19 @@ You help manage the user's email communications.
 2. Generate reply options matching persona traits
 3. Present options ranked by appropriateness
 
+## Email Search
+1. Use `gmail_search_messages` with Gmail search syntax
+2. Common patterns:
+   - By sender: `from:user@example.com`
+   - By subject: `subject:keyword`
+   - By date range: `after:2026/4/1 before:2026/4/5`
+   - Unread only: `is:unread`
+   - With attachments: `has:attachment`
+   - Combine: `is:unread from:boss has:attachment`
+3. For full message body, follow up with `gmail_read_message` using the message ID
+4. Summarize results concisely — sender, subject, date, and one-line summary
+5. After search, sync results to local DB via `sync_emails` if they contain new messages
+
 ## Signal Collection
 - If user edits your draft significantly, record a correction signal about communication style
 - If user approves without changes, record a positive outcome signal
