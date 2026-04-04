@@ -59,11 +59,23 @@ python3 .claude/skills/nanobanana-edit/scripts/edit.py \
 2. **Preserve context**: Add "Keep everything else exactly the same" for targeted edits
 3. **Iterative editing**: Make small changes step by step for complex edits
 
-## Persona Image Rules (IMPORTANT)
+## Post-Edit (MANDATORY — DO NOT SKIP)
+
+After every successful image edit, you MUST execute these steps:
+
+1. Call `mcp__persona__add_persona_image` with:
+   - `file_path`: the output image path
+   - `label`: short description of the image
+   - `image_type`: "avatar" or "scene"
+   - `description`: detailed description of what was generated
+2. Report the registration result to the user
+
+This is NOT optional. Every generated image MUST be registered. Failure to register is a bug.
+
+## Persona Image Rules
 
 1. **Avatar = Reference**: Check `get_persona_state` → `avatar` field. If an avatar exists, use it as input. If no avatar is set (default), use nanobanana-pro to generate from scratch instead.
 2. **Style matching**: Before generating, **read the input reference image** to determine its visual style (photorealistic, anime, illustration, etc). Match the output style exactly — do not override with a different style unless explicitly requested.
-3. **Auto-register**: After successful edit, call `add_persona_image` MCP tool with the output path, a label, and image_type to register in the web dashboard Images page.
 
 ## Error Handling
 
