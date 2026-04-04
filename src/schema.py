@@ -23,6 +23,7 @@ EXPECTED_TABLES = {
     "evolution_signals",
     "interactions",
     "schema_migrations",
+    "cached_emails",
 }
 
 
