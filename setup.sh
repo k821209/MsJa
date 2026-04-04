@@ -35,13 +35,17 @@ else
 fi
 
 # ── 2. Python check ──
-if ! command -v python3 &>/dev/null; then
-    echo "❌ python3 not found. Please install Python 3.11+."
+if command -v python3 &>/dev/null; then
+    SYS_PYTHON=python3
+elif command -v python &>/dev/null; then
+    SYS_PYTHON=python
+else
+    echo "❌ python not found. Please install Python 3.11+."
     exit 1
 fi
 
-PY_VER=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-echo "✓ Python $PY_VER detected"
+PY_VER=$($SYS_PYTHON -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+echo "✓ Python $PY_VER detected ($(command -v $SYS_PYTHON))"
 
 # ── 2. Virtual environment ──
 # Always recreate if venv is broken — moving/renaming the project
@@ -60,7 +64,7 @@ fi
 if [ $NEED_VENV -eq 1 ]; then
     rm -rf "$VENV_DIR"
     echo "→ Creating virtual environment..."
-    python3 -m venv "$VENV_DIR"
+    $SYS_PYTHON -m venv "$VENV_DIR"
 else
     echo "✓ Virtual environment OK"
 fi
