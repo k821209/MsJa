@@ -15,7 +15,9 @@ CREATE TABLE IF NOT EXISTS persona_meta (
     persona_name    TEXT NOT NULL DEFAULT 'deevo',
     created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
     schema_version  INTEGER NOT NULL DEFAULT 1,
-    description     TEXT
+    description     TEXT,
+    avatar_path     TEXT DEFAULT 'persona/avatar/default.png',
+    reference_path  TEXT
 );
 
 INSERT OR IGNORE INTO persona_meta (id, description)
