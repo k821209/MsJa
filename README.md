@@ -69,15 +69,22 @@ No external API calls required -- Claude Code itself handles reflection analysis
 | `scripts/start_web.sh` | Start/restart web dashboard |
 | `scripts/seed_lore.py` | Seed initial lore entries |
 
-## Google Calendar
+## Google Calendar & Gmail
 
-Google Calendar and Gmail use Claude Code's built-in MCP connectors -- no extra setup needed.
+Google Calendar and Gmail use Claude Code's built-in MCP integrations. Setup requires two steps:
+
+### Step 1: Enable Google integrations in Claude
+
+1. Go to [claude.ai/settings/integrations](https://claude.ai/settings/integrations) (web) or Claude desktop app Settings > Integrations
+2. Connect **Google Calendar** and **Gmail**
+3. Authorize with your Google account via OAuth
+
+### Step 2: Use in Ms. Ja
 
 1. Start `claude` from the web terminal
-2. On first run, Claude Code will ask to allow MCP tools -- select **Allow all** to enable Google Calendar, Gmail, and persona tools
+2. On first run, Claude Code will ask to allow MCP tools -- select **Allow all**
 3. Ask about your schedule (e.g. "내일 일정 뭐야?") or email (e.g. "새 메일 확인해줘")
-4. Claude Code will prompt you to authorize via OAuth on first use
-5. After authorization, calendar and email features work automatically
+4. Calendar and email features work automatically
 
 ## Image Generation
 
