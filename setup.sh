@@ -24,16 +24,28 @@ else
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "→ Installing Claude Code..."
         curl -fsSL https://claude.ai/install.sh | bash
-        # Add to PATH for current session
+        # Add to PATH permanently + current session
+        CLAUDE_BIN=""
         if [ -d "$HOME/.claude/bin" ]; then
-            export PATH="$HOME/.claude/bin:$PATH"
+            CLAUDE_BIN="$HOME/.claude/bin"
         elif [ -d "$HOME/.local/bin" ]; then
-            export PATH="$HOME/.local/bin:$PATH"
+            CLAUDE_BIN="$HOME/.local/bin"
+        fi
+        if [ -n "$CLAUDE_BIN" ]; then
+            export PATH="$CLAUDE_BIN:$PATH"
+            # Add to shell rc if not already there
+            SHELL_RC="$HOME/.bashrc"
+            [ -n "$ZSH_VERSION" ] && SHELL_RC="$HOME/.zshrc"
+            [ -f "$HOME/.zshrc" ] && SHELL_RC="$HOME/.zshrc"
+            if ! grep -q "$CLAUDE_BIN" "$SHELL_RC" 2>/dev/null; then
+                echo "export PATH=\"$CLAUDE_BIN:\$PATH\"" >> "$SHELL_RC"
+                echo "  → Added $CLAUDE_BIN to $SHELL_RC"
+            fi
         fi
         if command -v claude &>/dev/null; then
             echo "✓ Claude Code installed"
         else
-            echo "✓ Claude Code installed (restart your terminal or run: export PATH=\"\$HOME/.claude/bin:\$PATH\")"
+            echo "✓ Claude Code installed (run: source ~/.bashrc or restart terminal)"
         fi
     else
         echo "  Skipped. Install later: curl -fsSL https://claude.ai/install.sh | bash"
@@ -132,8 +144,13 @@ FAIL=0
 [ -f "$PROJECT_DIR/.claude/settings.json" ] \
     && echo "✓ Claude hooks configured" || { echo "❌ .claude/settings.json missing"; FAIL=1; }
 
-command -v claude &>/dev/null \
-    && echo "✓ Claude Code available" || echo "⚠ Claude Code not installed (optional but recommended)"
+if claude --version &>/dev/null 2>&1; then
+    echo "✓ Claude Code available ($(claude --version 2>/dev/null))"
+else
+    echo "⚠ Claude Code not found in PATH. Install or restart terminal:"
+    echo "    curl -fsSL https://claude.ai/install.sh | bash"
+    echo "    export PATH=\"\$HOME/.claude/bin:\$PATH\""
+fi
 
 echo ""
 if [ $FAIL -eq 0 ]; then
