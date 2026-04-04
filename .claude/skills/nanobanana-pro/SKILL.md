@@ -4,7 +4,7 @@ description: Generate images using Google Nano Banana Pro (Gemini 3 Pro Image) A
 argument-hint: [prompt or @file.md] [--aspect 16:9] [--size 2K] [--output filename.png] [--lang ko]
 context: fork
 agent: general-purpose
-allowed-tools: Bash, Read
+allowed-tools: Bash, Read, mcp__persona__add_persona_image, mcp__persona__set_persona_avatar
 ---
 
 # Nano Banana Pro Image Generator
