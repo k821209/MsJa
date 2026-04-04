@@ -1,0 +1,119 @@
+{% extends "base_inner.html" %}
+{% block title %}Ms. Ja — Files{% endblock %}
+
+{% block content %}
+<h1>Files</h1>
+
+<!-- Breadcrumb -->
+<div class="file-breadcrumb">
+  <a href="?path=">root</a>
+  {% for bc in breadcrumbs %}
+  <span class="bc-sep">/</span>
+  <a href="?path={{ bc.path }}">{{ bc.name }}</a>
+  {% endfor %}
+</div>
+
+<!-- Upload -->
+<div class="file-upload-bar">
+  <form id="upload-form" enctype="multipart/form-data">
+    <input type="file" id="file-input" multiple>
+    <button type="submit" class="btn-sm">Upload</button>
+  </form>
+  <span id="upload-status" class="upload-status"></span>
+</div>
+
+<!-- File list -->
+<div class="card file-list">
+  {% if current_path %}
+  <a href="?path={{ current_path | replace('/' ~ breadcrumbs[-1].name, '') if breadcrumbs else '' }}" class="file-row file-parent">
+    <span class="file-icon">📁</span>
+    <span class="file-name">..</span>
+    <span class="file-size"></span>
+    <span class="file-date"></span>
+  </a>
+  {% endif %}
+
+  {% for item in items %}
+  <a href="{% if item.is_dir %}?path={{ item.path }}{% else %}?path={{ item.path }}{% endif %}"
+     class="file-row {% if not item.is_dir %}file-download{% endif %}"
+     {% if not item.is_dir %}target="_blank"{% endif %}>
+    <span class="file-icon">{% if item.is_dir %}📁{% elif item.name.endswith(('.png','.jpg','.jpeg','.gif','.webp')) %}🖼{% elif item.name.endswith(('.py','.js','.ts','.sh')) %}📄{% elif item.name.endswith(('.md','.txt')) %}📝{% elif item.name.endswith(('.pdf')) %}📕{% elif item.name.endswith(('.mp4','.mov','.avi')) %}🎬{% else %}📎{% endif %}</span>
+    <span class="file-name">{{ item.name }}{% if item.is_dir %}/{% endif %}</span>
+    <span class="file-size">{% if item.size is not none %}{{ "%.1f KB" | format(item.size / 1024) if item.size > 1024 else "%d B" | format(item.size) }}{% endif %}</span>
+    <span class="file-date">{{ item.modified | int }}</span>
+  </a>
+  {% endfor %}
+
+  {% if not items and not current_path %}
+  <div class="empty">No files found.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.file-breadcrumb { margin-bottom: 12px; font-size: 0.9rem; }
+.file-breadcrumb a { color: var(--accent); text-decoration: none; }
+.file-breadcrumb a:hover { text-decoration: underline; }
+.bc-sep { color: var(--text2); margin: 0 4px; }
+
+.file-upload-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.file-upload-bar input[type=file] { font-size: 0.85rem; color: var(--text2); }
+.upload-status { font-size: 0.8rem; color: var(--green); }
+
+.file-list { padding: 0; }
+.file-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  text-decoration: none; color: var(--text);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+}
+.file-row:hover { background: var(--surface2); }
+.file-row:last-child { border-bottom: none; }
+.file-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+.file-name { flex: 1; font-size: 0.9rem; }
+.file-size { font-size: 0.8rem; color: var(--text2); min-width: 70px; text-align: right; }
+.file-date { font-size: 0.8rem; color: var(--text2); min-width: 80px; text-align: right; }
+.file-parent .file-name { color: var(--text2); }
+</style>
+
+<script>
+// Format timestamps
+document.querySelectorAll('.file-date').forEach(el => {
+  const ts = parseInt(el.textContent);
+  if (ts) {
+    const d = new Date(ts * 1000);
+    el.textContent = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  }
+});
+
+// Upload handler
+document.getElementById('upload-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('file-input');
+  const status = document.getElementById('upload-status');
+  if (!input.files.length) return;
+
+  const formData = new FormData();
+  for (const file of input.files) {
+    formData.append('file', file);
+  }
+  formData.append('path', '{{ current_path }}');
+
+  status.textContent = 'Uploading...';
+  try {
+    const res = await fetch('/api/files/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      status.textContent = 'Done!';
+      setTimeout(() => location.reload(), 500);
+    } else {
+      status.textContent = 'Error: ' + (data.error || 'unknown');
+    }
+  } catch (err) {
+    status.textContent = 'Upload failed';
+  }
+});
+</script>
+{% endblock %}

@@ -233,6 +233,79 @@ async def reflections_page(request: Request):
         conn.close()
 
 
+@app.get("/page/files", response_class=HTMLResponse)
+async def files_page(request: Request, path: str = ""):
+    """Simple directory browser rooted at project root."""
+    base = PROJECT_ROOT
+    target = (base / path).resolve()
+    # Security: prevent path traversal
+    if not str(target).startswith(str(base)):
+        target = base
+        path = ""
+
+    if target.is_file():
+        from starlette.responses import FileResponse
+        return FileResponse(str(target), filename=target.name)
+
+    items = []
+    try:
+        for entry in sorted(target.iterdir(), key=lambda e: (not e.is_dir(), e.name.lower())):
+            name = entry.name
+            if name.startswith(".") and name not in (".claude",):
+                continue
+            if name in ("__pycache__", ".venv", "node_modules", ".git"):
+                continue
+            rel = str(entry.relative_to(base))
+            stat = entry.stat()
+            items.append({
+                "name": name,
+                "path": rel,
+                "is_dir": entry.is_dir(),
+                "size": stat.st_size if entry.is_file() else None,
+                "modified": stat.st_mtime,
+            })
+    except PermissionError:
+        pass
+
+    # Breadcrumb
+    parts = []
+    if path:
+        accumulated = ""
+        for p in Path(path).parts:
+            accumulated = str(Path(accumulated) / p) if accumulated else p
+            parts.append({"name": p, "path": accumulated})
+
+    return templates.TemplateResponse(request=request, name="files.html", context={
+        "request": request,
+        "items": items,
+        "current_path": path,
+        "breadcrumbs": parts,
+    })
+
+
+@app.post("/api/files/upload")
+async def upload_file(request: Request):
+    """Upload a file to the specified directory."""
+    from starlette.datastructures import UploadFile as _UF
+    form = await request.form()
+    file = form.get("file")
+    dest_dir = form.get("path", "")
+    if not file:
+        return {"error": "No file provided"}
+
+    base = PROJECT_ROOT
+    target_dir = (base / dest_dir).resolve()
+    if not str(target_dir).startswith(str(base)):
+        return {"error": "Invalid path"}
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    dest = target_dir / file.filename
+    with open(dest, "wb") as f:
+        content = await file.read()
+        f.write(content)
+    return {"status": "ok", "path": str(dest.relative_to(base)), "size": len(content)}
+
+
 @app.get("/page/calendar", response_class=HTMLResponse)
 async def calendar_page(request: Request, date: str | None = None, week_offset: int = 0, month_offset: int = 0):
     from datetime import datetime, timedelta
