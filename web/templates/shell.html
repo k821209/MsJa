@@ -65,6 +65,13 @@
       document.getElementById('content-frame').src = '/page' + e.data.path;
     }
   });
+
+  // Broadcast terminal state whenever iframe loads a new page
+  document.getElementById('content-frame').addEventListener('load', () => {
+    if (typeof broadcastTerminalState === 'function') {
+      setTimeout(broadcastTerminalState, 100);
+    }
+  });
   </script>
   <script src="/static/js/terminal.js"></script>
 </body>
