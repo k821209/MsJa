@@ -26,6 +26,7 @@
 <!-- Actions -->
 <div class="doc-actions">
   <button class="btn-copy" data-text="{{ doc.content }}">Copy Markdown</button>
+  <button class="btn-sm" onclick="exportImage()">Export Image</button>
   <button class="btn-sm" onclick="toggleRaw()">Toggle Raw</button>
   {% if doc.status == 'draft' %}
   <button class="btn" onclick="setStatus({{ doc.id }}, 'final')">Mark Final</button>
@@ -73,10 +74,30 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script>
 // Render markdown
 const rawContent = document.getElementById('doc-raw').textContent;
 document.getElementById('doc-rendered').innerHTML = marked.parse(rawContent);
+
+// Export rendered markdown as image
+async function exportImage() {
+  const el = document.getElementById('doc-rendered');
+  // Temporarily add padding and background for clean capture
+  el.style.padding = '32px';
+  el.style.background = '#0d1117';
+  const canvas = await html2canvas(el, {
+    backgroundColor: '#0d1117',
+    scale: 2,
+  });
+  el.style.padding = '';
+  el.style.background = '';
+  // Download
+  const link = document.createElement('a');
+  link.download = '{{ doc.title | replace(" ", "_") }}.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
 
 // Toggle raw/rendered
 function toggleRaw() {
