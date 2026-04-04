@@ -57,25 +57,19 @@ body {
 .quick-start {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   padding: 12px 16px;
   margin-bottom: 16px;
   border: 1px dashed var(--border);
 }
-.quick-buttons {
+.quick-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
-.quick-help {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 0.75rem;
+.quick-desc {
+  font-size: 0.8rem;
   color: var(--text2);
-}
-.quick-help b {
-  color: var(--text);
 }
 .btn-quick {
   padding: 6px 14px;

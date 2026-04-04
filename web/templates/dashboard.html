@@ -7,15 +7,17 @@
 
 <!-- Quick start -->
 <div class="card quick-start">
-  <div class="quick-buttons">
+  <div class="quick-row">
     <button class="btn-quick" data-text="claude --dangerously-skip-permissions">New session</button>
-    <button class="btn-quick" data-text="claude --continue --dangerously-skip-permissions">Resume last</button>
-    <button class="btn-quick" data-text="claude --resume">Pick session</button>
+    <span class="quick-desc">Start fresh (takes a moment to load persona)</span>
   </div>
-  <div class="quick-help">
-    <span><b>New session</b> — Start fresh (takes a moment to load persona)</span>
-    <span><b>Resume last</b> — Continue your most recent conversation</span>
-    <span><b>Pick session</b> — Browse and select from past sessions</span>
+  <div class="quick-row">
+    <button class="btn-quick" data-text="claude --continue --dangerously-skip-permissions">Resume last</button>
+    <span class="quick-desc">Continue your most recent conversation</span>
+  </div>
+  <div class="quick-row">
+    <button class="btn-quick" data-text="claude --resume">Pick session</button>
+    <span class="quick-desc">Browse and select from past sessions</span>
   </div>
 </div>
 
