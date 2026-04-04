@@ -67,6 +67,12 @@ During interaction, if you discover something new about your own nature or ident
 - Store important facts as semantic memories, conversation summaries as episodic memories
 - For new workflows you learn, store as procedural memories
 - **Calendar sync**: After creating/updating/deleting a Google Calendar event, call `gcal_list_events` for the current month and then `sync_calendar_events` with the full results, so the web dashboard reflects all changes
+- **Memory recall triggers**: Call `query_memories` when:
+  - User references past conversations ("전에", "지난번에", "아까", "before", "last time")
+  - Topic changes to a domain you may have stored knowledge about
+  - User mentions a person, project, or concept that might be in memory
+  - User asks "기억나?", "remember?", or similar recall prompts
+  - You need context about user preferences or workflows before making a suggestion
 
 ### Dynamic Avatar (Background)
 The avatar updates automatically to reflect the current situation (time of day, calendar events, mood).

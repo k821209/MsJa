@@ -153,10 +153,16 @@ def query_memories(
         params.append(len(tags))
 
     where = " AND ".join(conditions) if conditions else "1=1"
+    # Relevance score: importance (50%) + recency (30%) + access frequency (20%)
     sql = f"""
-        SELECT m.* FROM memories m
+        SELECT m.*,
+            (m.importance * 0.5
+             + (1.0 / (1.0 + julianday('now') - julianday(m.created_at))) * 0.3
+             + MIN(COALESCE(m.access_count, 0) / 10.0, 1.0) * 0.2
+            ) AS relevance
+        FROM memories m
         WHERE {where}
-        ORDER BY m.importance DESC
+        ORDER BY relevance DESC
         LIMIT ?
     """
     params.append(limit)
@@ -166,7 +172,14 @@ def query_memories(
     for row in rows:
         d = _row_to_dict(row)
         d["tags"] = _fetch_tags(conn, d["id"])
+        d["relevance"] = round(row["relevance"], 3) if "relevance" in row.keys() else None
+        # Update access tracking
+        conn.execute(
+            "UPDATE memories SET access_count = access_count + 1, last_accessed = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = ?",
+            (d["id"],),
+        )
         results.append(d)
+    conn.commit()
     return results
 
 

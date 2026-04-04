@@ -65,10 +65,14 @@ def _parse_tags(tags: str | None) -> list[str] | None:
 
 @mcp.tool()
 def get_persona_state() -> dict[str, Any]:
-    """Return current traits, active rules, and persona name. Use at session start."""
+    """Return current traits, active rules, persona name, and top memories. Use at session start."""
     conn = init_db()
     try:
-        return _get_persona_state(conn)
+        state = _get_persona_state(conn)
+        # Include top ranked memories for session context
+        top_memories = _query_memories(conn, limit=10)
+        state["memories"] = top_memories
+        return state
     except Exception as e:
         return {"error": str(e)}
     finally:
