@@ -23,5 +23,8 @@ persona/video/
 web/static/uploads/*
 !web/static/uploads/.gitkeep
 
+# User files
+data/files/
+
 # Environment
 .env

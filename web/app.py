@@ -81,6 +81,9 @@ UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 # Serve persona images from project root
 app.mount("/persona", StaticFiles(directory=str(PROJECT_ROOT / "persona")), name="persona")
+# Serve user files
+(PROJECT_ROOT / "data" / "files").mkdir(parents=True, exist_ok=True)
+app.mount("/files", StaticFiles(directory=str(PROJECT_ROOT / "data" / "files")), name="files")
 
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
@@ -235,8 +238,9 @@ async def reflections_page(request: Request):
 
 @app.get("/page/files", response_class=HTMLResponse)
 async def files_page(request: Request, path: str = ""):
-    """Simple directory browser rooted at project root."""
-    base = PROJECT_ROOT
+    """Simple directory browser rooted at data/files/."""
+    base = PROJECT_ROOT / "data" / "files"
+    base.mkdir(parents=True, exist_ok=True)
     target = (base / path).resolve()
     # Security: prevent path traversal
     if not str(target).startswith(str(base)):
@@ -293,7 +297,8 @@ async def upload_file(request: Request):
     if not file:
         return {"error": "No file provided"}
 
-    base = PROJECT_ROOT
+    base = PROJECT_ROOT / "data" / "files"
+    base.mkdir(parents=True, exist_ok=True)
     target_dir = (base / dest_dir).resolve()
     if not str(target_dir).startswith(str(base)):
         return {"error": "Invalid path"}
