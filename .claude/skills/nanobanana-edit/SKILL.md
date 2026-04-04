@@ -4,7 +4,7 @@ description: Edit existing images using Google Nano Banana Pro (Gemini 3 Pro Ima
 argument-hint: --input image.png "editing instruction" [--aspect 16:9] [--size 2K] [--output edited.png]
 context: fork
 agent: general-purpose
-allowed-tools: Bash, Read, mcp__persona__add_persona_image, mcp__persona__set_persona_avatar
+allowed-tools: Bash, Read, mcp__persona__add_persona_image, mcp__persona__set_persona_avatar, mcp__persona__get_avatar_reference
 ---
 
 # Nano Banana Pro Image Editor
@@ -80,10 +80,16 @@ After every successful image edit, you MUST execute these steps:
 
 This is NOT optional. Every generated image MUST be registered. Failure to register is a bug.
 
-## Persona Image Rules
+## Pre-Edit (MANDATORY — DO FIRST)
 
-1. **Avatar = Reference**: Check `get_persona_state` → `avatar` field. If an avatar exists, use it as input. If no avatar is set (default), use nanobanana-pro to generate from scratch instead.
-2. **Style matching**: Before generating, **read the input reference image** to determine its visual style (photorealistic, anime, illustration, etc). Match the output style exactly — do not override with a different style unless explicitly requested.
+Before editing, you MUST follow these steps:
+
+1. Call `mcp__persona__get_avatar_reference` to get the current reference image path
+2. If `--input` was NOT specified by the user, use the reference image as input
+3. If no reference image is set, inform the user and suggest using nanobanana-pro to generate one first
+4. **Read the reference image** to determine its visual style (photorealistic, anime, illustration, etc). Match the output style exactly — do not override with a different style unless explicitly requested
+
+This ensures all edits are based on the user's chosen reference image for visual consistency.
 
 ## Error Handling
 
