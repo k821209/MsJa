@@ -19,18 +19,14 @@ if command -v claude &>/dev/null; then
     echo "✓ Claude Code installed ($CLAUDE_VER)"
 else
     echo "⚠ Claude Code not found."
-    read -p "  Install Claude Code via npm? (y/n) " -n 1 -r
+    read -p "  Install Claude Code? (y/n) " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        if command -v npm &>/dev/null; then
-            echo "→ Installing Claude Code..."
-            npm install -g @anthropic-ai/claude-code
-            echo "✓ Claude Code installed"
-        else
-            echo "❌ npm not found. Install Node.js first, then run: npm install -g @anthropic-ai/claude-code"
-        fi
+        echo "→ Installing Claude Code..."
+        curl -fsSL https://claude.ai/install.sh | bash
+        echo "✓ Claude Code installed"
     else
-        echo "  Skipped. Install later: npm install -g @anthropic-ai/claude-code"
+        echo "  Skipped. Install later: curl -fsSL https://claude.ai/install.sh | bash"
     fi
 fi
 

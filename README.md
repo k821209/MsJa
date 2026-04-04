@@ -98,7 +98,7 @@ wsl --install
 sudo apt update && sudo apt install -y python3 python3-venv nodejs npm
 
 # 3. Install Claude Code
-npm install -g @anthropic-ai/claude-code
+curl -fsSL https://claude.ai/install.sh | bash
 
 # 4. Clone and setup
 git clone https://github.com/k821209/MsJa.git
