@@ -24,7 +24,17 @@ else
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "→ Installing Claude Code..."
         curl -fsSL https://claude.ai/install.sh | bash
-        echo "✓ Claude Code installed"
+        # Add to PATH for current session
+        if [ -d "$HOME/.claude/bin" ]; then
+            export PATH="$HOME/.claude/bin:$PATH"
+        elif [ -d "$HOME/.local/bin" ]; then
+            export PATH="$HOME/.local/bin:$PATH"
+        fi
+        if command -v claude &>/dev/null; then
+            echo "✓ Claude Code installed"
+        else
+            echo "✓ Claude Code installed (restart your terminal or run: export PATH=\"\$HOME/.claude/bin:\$PATH\")"
+        fi
     else
         echo "  Skipped. Install later: curl -fsSL https://claude.ai/install.sh | bash"
     fi
