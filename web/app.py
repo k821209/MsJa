@@ -234,7 +234,7 @@ async def reflections_page(request: Request):
 
 
 @app.get("/page/calendar", response_class=HTMLResponse)
-async def calendar_page(request: Request, date: str | None = None, week_offset: int = 0):
+async def calendar_page(request: Request, date: str | None = None, week_offset: int = 0, month_offset: int = 0):
     from datetime import datetime, timedelta
     from src.calendar import get_events_range
     conn = _conn()
@@ -242,36 +242,63 @@ async def calendar_page(request: Request, date: str | None = None, week_offset: 
         today_str = datetime.now().strftime("%Y-%m-%d")
         selected_date = date or today_str
 
-        # Week navigation: offset from current week
+        # Week navigation: if a date is selected, auto-compute week_offset to show that week
         today_dt = datetime.now()
+        if date:
+            selected_dt = datetime.strptime(date, "%Y-%m-%d")
+            selected_monday = selected_dt - timedelta(days=selected_dt.weekday())
+            today_date = today_dt.replace(hour=0, minute=0, second=0, microsecond=0)
+            today_monday = today_date - timedelta(days=today_date.weekday())
+            week_offset = (selected_monday - today_monday).days // 7
         monday = today_dt - timedelta(days=today_dt.weekday()) + timedelta(weeks=week_offset)
         sunday = monday + timedelta(days=6)
         week_start = monday.strftime("%Y-%m-%d")
         week_end = (sunday + timedelta(days=1)).strftime("%Y-%m-%d")
         week_events = get_events_range(conn, week_start, week_end)
 
-        # Group by date
+        # Group by date (expand multi-day events across all their dates)
         by_date: dict[str, list] = {}
         for e in week_events:
-            d = e["start_time"][:10]
-            by_date.setdefault(d, []).append(e)
+            e_start = e["start_time"][:10]
+            e_end = e["end_time"][:10]
+            d = datetime.strptime(e_start, "%Y-%m-%d")
+            d_end = datetime.strptime(e_end, "%Y-%m-%d")
+            while True:
+                by_date.setdefault(d.strftime("%Y-%m-%d"), []).append(e)
+                d += timedelta(days=1)
+                if d >= d_end:
+                    break
         for i in range(7):
             day = (monday + timedelta(days=i)).strftime("%Y-%m-%d")
             by_date.setdefault(day, [])
         week = dict(sorted(by_date.items()))
 
         # Month calendar data
-        month_dt = monday if week_offset != 0 else today_dt
-        first_of_month = month_dt.replace(day=1)
-        if month_dt.month == 12:
-            last_of_month = month_dt.replace(year=month_dt.year + 1, month=1, day=1) - timedelta(days=1)
+        base_month_dt = today_dt
+        # Apply month_offset
+        m = base_month_dt.month + month_offset
+        y = base_month_dt.year + (m - 1) // 12
+        m = (m - 1) % 12 + 1
+        first_of_month = base_month_dt.replace(year=y, month=m, day=1)
+        if first_of_month.month == 12:
+            last_of_month = first_of_month.replace(year=first_of_month.year + 1, month=1, day=1) - timedelta(days=1)
         else:
-            last_of_month = month_dt.replace(month=month_dt.month + 1, day=1) - timedelta(days=1)
+            last_of_month = first_of_month.replace(month=first_of_month.month + 1, day=1) - timedelta(days=1)
 
         month_start = first_of_month - timedelta(days=first_of_month.weekday())  # pad to Monday
         month_end = last_of_month + timedelta(days=6 - last_of_month.weekday() + 1)
         month_events = get_events_range(conn, month_start.strftime("%Y-%m-%d"), month_end.strftime("%Y-%m-%d"))
-        month_event_dates = set(e["start_time"][:10] for e in month_events)
+        # Expand multi-day events to all their dates for dot display
+        month_event_dates = set()
+        for e in month_events:
+            e_start = datetime.strptime(e["start_time"][:10], "%Y-%m-%d")
+            e_end = datetime.strptime(e["end_time"][:10], "%Y-%m-%d")
+            d = e_start
+            while True:
+                month_event_dates.add(d.strftime("%Y-%m-%d"))
+                d += timedelta(days=1)
+                if d >= e_end:
+                    break
 
         # Build month grid (weeks of days)
         month_grid = []
@@ -303,6 +330,7 @@ async def calendar_page(request: Request, date: str | None = None, week_offset: 
             "week_label": f"{monday.strftime('%m/%d')} — {sunday.strftime('%m/%d')}",
             "month_label": first_of_month.strftime("%Y년 %m월"),
             "month_grid": month_grid,
+            "month_offset": month_offset,
         })
     finally:
         conn.close()

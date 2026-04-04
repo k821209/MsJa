@@ -9,7 +9,15 @@
 
   <!-- Month mini calendar -->
   <div class="card cal-month">
-    <h2>{{ month_label }}</h2>
+    <div class="month-nav">
+      <a href="?month_offset={{ month_offset - 1 }}&week_offset={{ week_offset }}" class="btn-sm">&larr;</a>
+      <h2>{{ month_label }}</h2>
+      <a href="?month_offset={{ month_offset + 1 }}&week_offset={{ week_offset }}" class="btn-sm">&rarr;</a>
+      <span class="month-nav-spacer"></span>
+      {% if month_offset != 0 %}
+      <a href="?month_offset=0&week_offset={{ week_offset }}" class="btn-sm btn-today">Today</a>
+      {% endif %}
+    </div>
     <table class="month-grid">
       <thead>
         <tr>
@@ -23,7 +31,7 @@
         <tr>
           {% for cell in row %}
           <td class="month-cell{% if not cell.in_month %} dim{% endif %}{% if cell.is_today %} today{% endif %}{% if cell.date == selected_date %} selected{% endif %}"
-              onclick="window.location.href='/page/calendar?date={{ cell.date }}&week_offset={{ week_offset }}'">
+              onclick="window.location.href='?date={{ cell.date }}&week_offset={{ week_offset }}&month_offset={{ month_offset }}'">
             {{ cell.day }}
             {% if cell.has_events %}<span class="dot"></span>{% endif %}
           </td>
@@ -37,17 +45,17 @@
   <!-- Week view with navigation -->
   <div class="card cal-week">
     <div class="week-nav">
-      <a href="/calendar?week_offset={{ week_offset - 1 }}" class="btn-sm">&larr; Prev</a>
+      <a href="?week_offset={{ week_offset - 1 }}" class="btn-sm">&larr; Prev</a>
       <h2>{{ week_label }}</h2>
-      <a href="/calendar?week_offset={{ week_offset + 1 }}" class="btn-sm">Next &rarr;</a>
+      <a href="?week_offset={{ week_offset + 1 }}" class="btn-sm">Next &rarr;</a>
       {% if week_offset != 0 %}
-      <a href="/calendar?week_offset=0" class="btn-sm">Today</a>
+      <a href="?week_offset=0" class="btn-sm">Today</a>
       {% endif %}
     </div>
     <div class="week-grid">
       {% for date, events in week.items() %}
       <div class="week-day {% if date == selected_date %}active{% endif %}"
-           onclick="window.location.href='/page/calendar?date={{ date }}&week_offset={{ week_offset }}'">
+           onclick="window.location.href='?date={{ date }}&week_offset={{ week_offset }}&month_offset={{ month_offset }}'">
         <div class="week-day-header">
           <span class="week-day-name">{{ ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][loop.index0] }}</span>
           <span class="week-day-date">{{ date[5:] }}</span>
@@ -132,6 +140,11 @@
 .week-nav .btn-sm { text-decoration: none; padding: 4px 12px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; color: var(--text); background: var(--surface2); }
 .week-nav .btn-sm:hover { background: var(--accent); color: #000; }
 
+.month-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.month-nav h2 { margin: 0; text-align: center; font-size: 1rem; }
+.month-nav-spacer { flex: 1; }
+.month-nav .btn-sm { text-decoration: none; padding: 4px 10px; font-size: 0.8rem; border: 1px solid var(--border); border-radius: 4px; color: var(--text); background: var(--surface2); }
+.month-nav .btn-sm:hover { background: var(--accent); color: #000; }
 .cal-month { min-width: 280px; }
 .month-grid { width: 100%; border-collapse: collapse; }
 .month-grid th { font-size: 0.75rem; color: var(--text2); padding: 4px; text-align: center; }

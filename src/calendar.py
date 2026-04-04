@@ -100,12 +100,13 @@ def sync_events_bulk(conn: sqlite3.Connection, events: list[dict]) -> int:
 
 
 def get_events_for_date(conn: sqlite3.Connection, date: str) -> list[dict[str, Any]]:
-    """Get events for a specific date (YYYY-MM-DD)."""
+    """Get events for a specific date (YYYY-MM-DD). Includes multi-day events spanning this date."""
+    next_date = (datetime.strptime(date, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
     rows = conn.execute(
         """SELECT * FROM calendar_events
-           WHERE substr(start_time, 1, 10) = ? AND status != 'cancelled'
+           WHERE start_time < ? AND end_time > ? AND status != 'cancelled'
            ORDER BY start_time""",
-        (date,),
+        (next_date, date),
     ).fetchall()
     return [_row_to_dict(r) for r in rows]
 
@@ -113,12 +114,12 @@ def get_events_for_date(conn: sqlite3.Connection, date: str) -> list[dict[str, A
 def get_events_range(
     conn: sqlite3.Connection, start: str, end: str
 ) -> list[dict[str, Any]]:
-    """Get events in a date range (YYYY-MM-DD)."""
+    """Get events in a date range (YYYY-MM-DD). Includes multi-day events that overlap the range."""
     rows = conn.execute(
         """SELECT * FROM calendar_events
-           WHERE start_time >= ? AND start_time < ? AND status != 'cancelled'
+           WHERE start_time < ? AND end_time > ? AND status != 'cancelled'
            ORDER BY start_time""",
-        (start, end),
+        (end, start),
     ).fetchall()
     return [_row_to_dict(r) for r in rows]
 
