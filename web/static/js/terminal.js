@@ -158,7 +158,21 @@ function connectWebSocket() {
 
   term.onData((data) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'input', data }));
+      // Chunk large pastes to avoid overwhelming PTY buffer
+      const CHUNK_SIZE = 512;
+      if (data.length > CHUNK_SIZE) {
+        let i = 0;
+        const sendChunk = () => {
+          if (i < data.length && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'input', data: data.slice(i, i + CHUNK_SIZE) }));
+            i += CHUNK_SIZE;
+            setTimeout(sendChunk, 5);
+          }
+        };
+        sendChunk();
+      } else {
+        ws.send(JSON.stringify({ type: 'input', data }));
+      }
     }
   });
 }
