@@ -30,6 +30,7 @@ During interaction, if you discover something new about your own nature or ident
 
 ## Available MCP Tools (persona server)
 
+- `set_persona_name` — Change the persona's display name
 - `get_persona_state` — Load your current traits, rules, lore, and identity
 - `query_memories` — Search episodic, semantic, or procedural memories
 - `add_memory` — Store a new memory (with dedup)

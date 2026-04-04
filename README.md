@@ -71,12 +71,13 @@ No external API calls required -- Claude Code itself handles reflection analysis
 
 ## Google Calendar
 
-Google Calendar uses Claude Code's built-in MCP connector -- no extra setup needed.
+Google Calendar and Gmail use Claude Code's built-in MCP connectors -- no extra setup needed.
 
 1. Start `claude` from the web terminal
-2. Ask about your schedule (e.g. "내일 일정 뭐야?")
-3. Claude Code will prompt you to authorize via OAuth
-4. After authorization, calendar features work automatically
+2. On first run, Claude Code will ask to allow MCP tools -- select **Allow all** to enable Google Calendar, Gmail, and persona tools
+3. Ask about your schedule (e.g. "내일 일정 뭐야?") or email (e.g. "새 메일 확인해줘")
+4. Claude Code will prompt you to authorize via OAuth on first use
+5. After authorization, calendar and email features work automatically
 
 ## Image Generation
 

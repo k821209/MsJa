@@ -64,6 +64,24 @@ def _parse_tags(tags: str | None) -> list[str] | None:
 
 
 @mcp.tool()
+def set_persona_name(name: str) -> dict[str, Any]:
+    """Set the persona's display name.
+
+    Args:
+        name: New name for the persona
+    """
+    conn = init_db()
+    try:
+        conn.execute("UPDATE persona_meta SET persona_name = ? WHERE id = 1", (name,))
+        conn.commit()
+        return {"name": name, "status": "updated"}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
 def get_persona_state() -> dict[str, Any]:
     """Return current traits, active rules, persona name, and top memories. Use at session start."""
     conn = init_db()
