@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS cached_emails (
     is_important    INTEGER NOT NULL DEFAULT 0,
     internal_date   TEXT,                      -- ISO 8601
     size_estimate   INTEGER,
+    summary         TEXT,                      -- AI-generated one-line Korean summary
+    body            TEXT,                      -- full email body (cached for important emails)
     synced_at       TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 
