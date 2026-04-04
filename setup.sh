@@ -14,7 +14,7 @@ echo "Project: $PROJECT_DIR"
 echo ""
 
 # ── 1. Claude Code check ──
-if claude --version &>/dev/null 2>&1; then
+if command -v claude &>/dev/null && claude --version &>/dev/null 2>&1; then
     CLAUDE_VER=$(claude --version 2>/dev/null)
     echo "✓ Claude Code installed ($CLAUDE_VER)"
 else
