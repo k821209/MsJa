@@ -81,9 +81,13 @@ body {
   cursor: pointer;
   transition: all .15s;
 }
-.btn-quick:hover {
+.btn-quick:hover:not(:disabled) {
   color: var(--green);
   border-color: var(--green);
+}
+.btn-quick:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .quick-start-cmd code {
   background: var(--bg);

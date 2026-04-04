@@ -25,6 +25,7 @@ function toggleTerminal() {
     panel.classList.add('hidden');
     icon.textContent = '▶';
   }
+  broadcastTerminalState();
 }
 
 function debouncedFit() {
@@ -185,8 +186,21 @@ function sendToTerminal(command) {
   setTimeout(trySend, termOpen ? 0 : 500);
 }
 
+// Notify iframe of terminal busy state
+function broadcastTerminalState() {
+  const iframe = document.getElementById('content-frame');
+  if (iframe && iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'terminal-busy', busy: termOpen }, '*');
+  }
+}
+
 window.addEventListener('message', (e) => {
   if (e.data && e.data.type === 'terminal-send' && e.data.command) {
     sendToTerminal(e.data.command);
+    // Notify iframe that terminal is now busy
+    setTimeout(broadcastTerminalState, 600);
+  }
+  if (e.data && e.data.type === 'terminal-status-request') {
+    broadcastTerminalState();
   }
 });
