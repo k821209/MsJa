@@ -26,5 +26,8 @@ web/static/uploads/*
 # User files
 data/files/
 
+# Analysis projects (separate venvs, data, results)
+projects/
+
 # Environment
 .env
