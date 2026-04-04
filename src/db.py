@@ -55,7 +55,21 @@ def run_migrations(conn: sqlite3.Connection, schema_dir: Path = SCHEMA_DIR) -> l
             continue
 
         sql = migration_file.read_text()
-        conn.executescript(sql)
+        try:
+            conn.executescript(sql)
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" in str(e):
+                # Column already exists (e.g. manual ALTER or partial migration).
+                # Execute remaining statements (like schema_migrations INSERT).
+                for stmt in sql.split(";"):
+                    stmt = stmt.strip()
+                    if stmt and not stmt.upper().startswith("ALTER"):
+                        try:
+                            conn.executescript(stmt + ";")
+                        except sqlite3.OperationalError:
+                            pass
+            else:
+                raise
         applied.append(migration_file.name)
 
     return applied
