@@ -86,6 +86,29 @@ Ms. Ja includes bundled Nanobanana skills for image generation/editing (Gemini A
 2. Use `/nanobanana-pro` to generate images
 3. Use `/nanobanana-edit` to edit existing images
 
+## Windows (WSL)
+
+Ms. Ja requires a Unix shell. On Windows, use WSL (Windows Subsystem for Linux):
+
+```powershell
+# 1. Install WSL (PowerShell as Admin)
+wsl --install
+
+# 2. Inside WSL (Ubuntu), install dependencies
+sudo apt update && sudo apt install -y python3 python3-venv nodejs npm
+
+# 3. Install Claude Code
+npm install -g @anthropic-ai/claude-code
+
+# 4. Clone and setup
+git clone https://github.com/k821209/MsJa.git
+cd MsJa
+bash setup.sh
+./scripts/start_web.sh
+```
+
+Access the dashboard at http://localhost:3000 from your Windows browser.
+
 ## Requirements
 
 - Python 3.11+

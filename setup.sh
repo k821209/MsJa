@@ -13,7 +13,28 @@ echo ""
 echo "Project: $PROJECT_DIR"
 echo ""
 
-# ── 1. Python check ──
+# ── 1. Claude Code check ──
+if command -v claude &>/dev/null; then
+    CLAUDE_VER=$(claude --version 2>/dev/null || echo "unknown")
+    echo "✓ Claude Code installed ($CLAUDE_VER)"
+else
+    echo "⚠ Claude Code not found."
+    read -p "  Install Claude Code via npm? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if command -v npm &>/dev/null; then
+            echo "→ Installing Claude Code..."
+            npm install -g @anthropic-ai/claude-code
+            echo "✓ Claude Code installed"
+        else
+            echo "❌ npm not found. Install Node.js first, then run: npm install -g @anthropic-ai/claude-code"
+        fi
+    else
+        echo "  Skipped. Install later: npm install -g @anthropic-ai/claude-code"
+    fi
+fi
+
+# ── 2. Python check ──
 if ! command -v python3 &>/dev/null; then
     echo "❌ python3 not found. Please install Python 3.11+."
     exit 1
@@ -100,6 +121,9 @@ FAIL=0
 
 [ -f "$PROJECT_DIR/.claude/settings.json" ] \
     && echo "✓ Claude hooks configured" || { echo "❌ .claude/settings.json missing"; FAIL=1; }
+
+command -v claude &>/dev/null \
+    && echo "✓ Claude Code available" || echo "⚠ Claude Code not installed (optional but recommended)"
 
 echo ""
 if [ $FAIL -eq 0 ]; then
