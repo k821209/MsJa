@@ -19,6 +19,7 @@ dist/
 # Personal avatar/upload images (keep .gitkeep for directory structure)
 persona/avatar/*
 !persona/avatar/.gitkeep
+persona/video/
 web/static/uploads/*
 !web/static/uploads/.gitkeep
 
