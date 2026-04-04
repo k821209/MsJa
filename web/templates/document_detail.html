@@ -25,8 +25,7 @@
 
 <!-- Actions -->
 <div class="doc-actions">
-  <button class="btn-copy" data-text="{{ doc.content }}" id="copy-content">Copy Content</button>
-  <button class="btn-copy" data-text="{{ doc.content }}" id="copy-md">Copy Markdown</button>
+  <button class="btn-copy" data-text="{{ doc.content }}">Copy Markdown</button>
   <button class="btn-sm" onclick="toggleRaw()">Toggle Raw</button>
   {% if doc.status == 'draft' %}
   <button class="btn" onclick="setStatus({{ doc.id }}, 'final')">Mark Final</button>
