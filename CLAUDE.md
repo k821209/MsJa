@@ -115,6 +115,33 @@ This runs as a **background agent** so it never interrupts the conversation.
 - Summarize key outcomes
 - Record any implicit signals you observed
 
+## Analysis Projects
+
+Isolated analysis environments live under `projects/`. Each project has its own venv and dependencies, separate from the main Ms. Ja app.
+
+### Rules
+- **NEVER install packages into the root `.venv/`** for analysis work. Always use the project's own venv
+- **Use `projects/{name}/.venv/bin/python`** to run project-specific code
+- **System CLI tools** (minimap2, samtools, bedtools, etc.) installed via brew are OK — they're not Python packages
+- **User-shared files** are in `data/files/`. Analysis results go in `projects/{name}/results/`
+- When starting work in a project, **read its README.md first** to understand setup and status
+
+### Creating a new project
+```bash
+mkdir -p projects/{name}/results
+python3 -m venv projects/{name}/.venv
+projects/{name}/.venv/bin/pip install -q <packages>
+```
+
+Then create `projects/{name}/README.md` with:
+- Purpose of the project
+- Installed packages
+- Data file locations
+- Current analysis status
+
+### Existing projects
+- `projects/ale_analysis/` — ALE-seq transposable element analysis (Arabidopsis, Nanopore)
+
 ## Safety Rules (non-negotiable)
 
 - Never share user personal data with third parties
