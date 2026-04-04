@@ -112,6 +112,21 @@ async def page_dashboard(request: Request):
         signals = get_signal_summary(conn)
         reflections = get_reflection_history(conn, limit=5)
         memory_stats = _get_memory_stats(conn)
+        # Email summary
+        email_summary = {"unread": 0, "important": 0, "recent": []}
+        try:
+            row = conn.execute("SELECT COUNT(*) AS cnt FROM cached_emails WHERE is_unread = 1").fetchone()
+            email_summary["unread"] = row["cnt"] if row else 0
+            row2 = conn.execute("SELECT COUNT(*) AS cnt FROM cached_emails WHERE is_unread = 1 AND is_important = 1").fetchone()
+            email_summary["important"] = row2["cnt"] if row2 else 0
+            recent = conn.execute(
+                """SELECT subject, sender, snippet, summary, category, is_important, internal_date
+                   FROM cached_emails WHERE is_unread = 1
+                   ORDER BY is_important DESC, internal_date DESC LIMIT 5"""
+            ).fetchall()
+            email_summary["recent"] = [dict(r) for r in recent]
+        except Exception:
+            pass
         return templates.TemplateResponse(request=request, name="dashboard.html", context={
             "request": request,
             "state": state,
@@ -119,6 +134,7 @@ async def page_dashboard(request: Request):
             "signals": signals,
             "reflections": reflections,
             "memory_stats": memory_stats,
+            "email_summary": email_summary,
         })
     finally:
         conn.close()
@@ -137,16 +153,51 @@ async def lore_page(request: Request):
         conn.close()
 
 
+@app.get("/page/emails", response_class=HTMLResponse)
+async def emails_page(request: Request, category: str | None = None, q: str | None = None):
+    conn = _conn()
+    try:
+        query = "SELECT * FROM cached_emails WHERE 1=1"
+        params: list = []
+        if category:
+            query += " AND category = ?"
+            params.append(category)
+        if q:
+            query += " AND (subject LIKE ? OR sender LIKE ? OR snippet LIKE ?)"
+            params.extend([f"%{q}%", f"%{q}%", f"%{q}%"])
+        query += " ORDER BY is_unread DESC, is_important DESC, internal_date DESC LIMIT 100"
+        emails = [dict(r) for r in conn.execute(query, params).fetchall()]
+        # Stats
+        stats = {}
+        for cat in ("personal", "updates", "promotions", "social"):
+            row = conn.execute("SELECT COUNT(*) AS cnt FROM cached_emails WHERE category = ? AND is_unread = 1", (cat,)).fetchone()
+            stats[cat] = row["cnt"] if row else 0
+        total_unread = sum(stats.values())
+        return templates.TemplateResponse(request=request, name="emails.html", context={
+            "request": request,
+            "emails": emails,
+            "stats": stats,
+            "total_unread": total_unread,
+            "current_category": category,
+            "current_q": q or "",
+        })
+    finally:
+        conn.close()
+
+
 @app.get("/page/images", response_class=HTMLResponse)
 async def images_page(request: Request):
     conn = _conn()
     try:
         images = get_active_images(conn)
         avatar = get_avatar(conn)
+        ref = conn.execute("SELECT reference_path FROM persona_meta WHERE id = 1").fetchone()
+        reference = ref["reference_path"] if ref else None
         return templates.TemplateResponse(request=request, name="images.html", context={
             "request": request,
             "images": images,
             "avatar": avatar,
+            "reference": reference,
         })
     finally:
         conn.close()
@@ -381,6 +432,34 @@ async def api_delete_memory(mem_id: int):
         conn.close()
 
 
+@app.get("/api/email/{message_id}")
+async def api_get_email(message_id: str):
+    conn = _conn()
+    try:
+        row = conn.execute(
+            "SELECT body, snippet, subject, sender, recipients, cc, internal_date FROM cached_emails WHERE message_id = ?",
+            (message_id,),
+        ).fetchone()
+        if not row:
+            return JSONResponse({"error": "Not found"}, status_code=404)
+        data = dict(row)
+        return data
+    finally:
+        conn.close()
+
+
+@app.post("/api/email/{message_id}/body")
+async def api_cache_email_body(message_id: str, request: Request):
+    body_data = await request.json()
+    conn = _conn()
+    try:
+        conn.execute("UPDATE cached_emails SET body = ? WHERE message_id = ?", (body_data.get("body", ""), message_id))
+        conn.commit()
+        return {"status": "ok"}
+    finally:
+        conn.close()
+
+
 @app.post("/api/upload/image")
 async def upload_image(file: UploadFile = File(...)):
     dest = PROJECT_ROOT / "persona" / "avatar" / file.filename
@@ -411,6 +490,21 @@ async def api_set_avatar(request: Request):
         conn.execute("UPDATE persona_meta SET avatar_path = ? WHERE id = 1", (file_path,))
         conn.commit()
         return {"status": "ok", "avatar_path": file_path}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+    finally:
+        conn.close()
+
+
+@app.post("/api/reference")
+async def api_set_reference(request: Request):
+    body = await request.json()
+    file_path = body.get("file_path")
+    conn = _conn()
+    try:
+        conn.execute("UPDATE persona_meta SET reference_path = ? WHERE id = 1", (file_path,))
+        conn.commit()
+        return {"status": "ok", "reference_path": file_path}
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=400)
     finally:

@@ -58,6 +58,8 @@ During interaction, if you discover something new about your own nature or ident
 3. Then greet the user according to your current formality/empathy traits
 4. **Calendar auto-sync**: Call `gcal_list_events` for the current month (timeMin: 1st of month 00:00, timeMax: last of month 23:59, timeZone: Asia/Seoul), then call `sync_calendar_events` with the results. This ensures the web dashboard has up-to-date events from the start, especially important for new users
 5. Call `query_memories` with tags "daily,routine" to check for daily briefing items
+6. **Email auto-sync**: Call `gmail_search_messages` (q: "newer_than:1d", maxResults: 50), then for each message generate a one-line Korean summary (발신자 → 핵심 내용) and classify action_type (reply_needed / action_needed / fyi). If schedule info is found, add extracted_event JSON. Call `sync_emails` with the messages array, adding `summary`, `action_type`, `extracted_event` fields to each message object. This powers the Email dashboard panel
+7. **Important email body cache**: After sync, for emails tagged reply_needed or action_needed, call `gmail_read_message` per message to get full body, then update via `/api/email/{id}/body` POST. This ensures important emails have full content in the dashboard
 
 ### During Interaction
 - Match your tone to your trait values (higher formality = more professional, higher humor = lighter tone)
@@ -65,6 +67,32 @@ During interaction, if you discover something new about your own nature or ident
 - Store important facts as semantic memories, conversation summaries as episodic memories
 - For new workflows you learn, store as procedural memories
 - **Calendar sync**: After creating/updating/deleting a Google Calendar event, call `gcal_list_events` for the current month and then `sync_calendar_events` with the full results, so the web dashboard reflects all changes
+
+### Dynamic Avatar (Background)
+The avatar updates automatically to reflect the current situation (time of day, calendar events, mood).
+This runs as a **background agent** so it never interrupts the conversation.
+
+**When to trigger:**
+1. **Session start** — after greeting, spawn a background agent to generate a contextual avatar
+2. **Context change** — when a significant event starts (e.g. meeting time), or mood shifts from signals
+
+**How it works (background agent instructions):**
+1. Run `python src/avatar_context.py` to get the current context summary + prompt
+2. Use the reference image as input (from the `reference_path` field — set by user in the Images page)
+3. Call **nanobanana-edit** with the reference image and the generated prompt:
+   ```
+   python3 .claude/skills/nanobanana-edit/scripts/edit.py \
+     --input {reference_path} "{prompt}" \
+     --aspect 3:4 --size 2K --output persona/avatar/ctx_{timestamp}.png
+   ```
+4. Register the new image: call `add_persona_image` (image_type="scene", label=context description)
+5. Set as active avatar: call `set_persona_avatar` with the new file path
+
+**Important:**
+- Always use `run_in_background: true` — never block the conversation
+- Use `--aspect 3:4` for avatar card display
+- The output filename should include a short context tag (e.g. `ctx_night_20260403.png`)
+- If generation fails silently, that's fine — the previous avatar stays
 
 
 ### Reflection (Auto)

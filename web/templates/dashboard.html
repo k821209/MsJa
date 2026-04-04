@@ -7,22 +7,9 @@
 
 <!-- Quick start -->
 <div class="card quick-start">
-  <div class="quick-start-label">Quick Commands</div>
-  <div class="quick-start-cmd">
-    <code>claude --dangerously-skip-permissions</code>
-    <button class="btn-copy" data-text="claude --dangerously-skip-permissions">copy</button>
-    <span class="quick-desc">New session</span>
-  </div>
-  <div class="quick-start-cmd">
-    <code>claude --continue --dangerously-skip-permissions</code>
-    <button class="btn-copy" data-text="claude --continue --dangerously-skip-permissions">copy</button>
-    <span class="quick-desc">Resume last</span>
-  </div>
-  <div class="quick-start-cmd">
-    <code>claude --resume</code>
-    <button class="btn-copy" data-text="claude --resume">copy</button>
-    <span class="quick-desc">Pick session</span>
-  </div>
+  <button class="btn-quick" data-text="claude --dangerously-skip-permissions">New session</button>
+  <button class="btn-quick" data-text="claude --continue --dangerously-skip-permissions">Resume last</button>
+  <button class="btn-quick" data-text="claude --resume">Pick session</button>
 </div>
 
 <div class="grid">
@@ -75,6 +62,26 @@
       <span class="dim-tag">{{ type }}: {{ count }}</span>
       {% endfor %}
     </div>
+  </div>
+
+  <!-- Email Summary -->
+  <div class="card">
+    <h2>Email <a href="/emails" class="link-more">more &rarr;</a></h2>
+    <div class="stat-big">{{ email_summary.unread }}</div>
+    <div class="stat-label">unread {% if email_summary.important %}({{ email_summary.important }} important){% endif %}</div>
+    {% if email_summary.recent %}
+    <div class="email-list">
+      {% for e in email_summary.recent %}
+      <div class="email-row">
+        {% if e.is_important %}<span class="email-important">!</span>{% endif %}
+        <span class="email-sender">{{ e.sender.split('<')[0] | trim | truncate(16) }}</span>
+        <span class="email-subject">{{ e.summary or e.subject | truncate(45) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No cached emails. Sync via session start.</div>
+    {% endif %}
   </div>
 
   <!-- Active Lore -->

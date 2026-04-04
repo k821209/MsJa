@@ -324,6 +324,20 @@ def set_persona_avatar(file_path: str) -> dict[str, Any]:
 
 
 @mcp.tool()
+def get_avatar_reference() -> dict[str, Any]:
+    """Get the reference image path used for contextual avatar generation."""
+    conn = init_db()
+    try:
+        row = conn.execute("SELECT reference_path, avatar_path FROM persona_meta WHERE id = 1").fetchone()
+        ref = row["reference_path"] if row and row["reference_path"] else (row["avatar_path"] if row else None)
+        return {"reference_path": ref}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+@mcp.tool()
 def get_lore(category: str | None = None, limit: int = 20) -> list[dict] | dict:
     """Get active lore entries (self-narrative). Optionally filter by category: identity, philosophy, behavior, aesthetic."""
     conn = init_db()
@@ -526,6 +540,80 @@ def sync_calendar_events(events_json: str) -> dict[str, Any]:
     try:
         events = json.loads(events_json)
         count = _sync_cal_events(conn, events)
+        return {"synced": count}
+    except Exception as e:
+        return {"error": str(e)}
+    finally:
+        conn.close()
+
+
+# ── Email Sync ─────────────────────────────────────────────────
+
+
+@mcp.tool()
+def sync_emails(emails_json: str) -> dict[str, Any]:
+    """Cache Gmail messages to local DB for web dashboard display.
+
+    Call this after using gmail_search_messages. Pass the raw messages JSON array.
+
+    Args:
+        emails_json: JSON string of messages array from gmail_search_messages
+    """
+    conn = init_db()
+    try:
+        messages = json.loads(emails_json)
+        count = 0
+        for msg in messages:
+            headers = msg.get("headers", {})
+            label_ids = msg.get("labelIds", [])
+
+            # Determine category
+            category = "personal"
+            for lid in label_ids:
+                if "PROMOTIONS" in lid:
+                    category = "promotions"
+                    break
+                elif "UPDATES" in lid:
+                    category = "updates"
+                    break
+                elif "SOCIAL" in lid:
+                    category = "social"
+                    break
+
+            # Parse internal date (epoch ms) to ISO
+            internal_ts = msg.get("internalDate", "0")
+            from datetime import datetime, timezone
+            internal_date = datetime.fromtimestamp(
+                int(internal_ts) / 1000, tz=timezone.utc
+            ).isoformat()
+
+            conn.execute(
+                """INSERT OR REPLACE INTO cached_emails
+                   (message_id, thread_id, subject, sender, recipients, cc,
+                    snippet, label_ids, category, is_unread, is_important,
+                    internal_date, size_estimate, summary, body, synced_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           ?, ?, ?, ?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))""",
+                (
+                    msg.get("messageId"),
+                    msg.get("threadId"),
+                    headers.get("Subject", "(no subject)"),
+                    headers.get("From", ""),
+                    headers.get("To", ""),
+                    headers.get("Cc", ""),
+                    msg.get("snippet", ""),
+                    json.dumps(label_ids),
+                    category,
+                    1 if "UNREAD" in label_ids else 0,
+                    1 if "IMPORTANT" in label_ids else 0,
+                    internal_date,
+                    msg.get("sizeEstimate", 0),
+                    msg.get("summary"),
+                    msg.get("body"),
+                ),
+            )
+            count += 1
+        conn.commit()
         return {"synced": count}
     except Exception as e:
         return {"error": str(e)}

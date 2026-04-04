@@ -62,7 +62,8 @@ python3 .claude/skills/nanobanana-edit/scripts/edit.py \
 ## Persona Image Rules (IMPORTANT)
 
 1. **Avatar = Reference**: Check `get_persona_state` → `avatar` field. If an avatar exists, use it as input. If no avatar is set (default), use nanobanana-pro to generate from scratch instead.
-2. **Auto-register**: After successful edit, call `add_persona_image` MCP tool with the output path, a label, and image_type to register in the web dashboard Images page.
+2. **Style matching**: Before generating, **read the input reference image** to determine its visual style (photorealistic, anime, illustration, etc). Match the output style exactly — do not override with a different style unless explicitly requested.
+3. **Auto-register**: After successful edit, call `add_persona_image` MCP tool with the output path, a label, and image_type to register in the web dashboard Images page.
 
 ## Error Handling
 

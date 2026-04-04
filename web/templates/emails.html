@@ -1,0 +1,198 @@
+{% extends "base_inner.html" %}
+{% block title %}Deevo — Emails{% endblock %}
+{% block nav_emails %}active{% endblock %}
+
+{% block content %}
+<h1>Emails</h1>
+<p class="subtitle">{{ total_unread }} unread</p>
+
+<!-- Category filter -->
+<div class="email-filters">
+  <a href="/emails" class="email-filter-btn {% if not current_category %}active{% endif %}">All</a>
+  {% for cat, count in stats.items() %}
+  <a href="/emails?category={{ cat }}" class="email-filter-btn {% if current_category == cat %}active{% endif %}">
+    {{ cat }} {% if count %}<span class="filter-count">{{ count }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Search -->
+<div class="email-search">
+  <form method="get" action="/emails">
+    {% if current_category %}<input type="hidden" name="category" value="{{ current_category }}">{% endif %}
+    <input type="text" name="q" value="{{ current_q }}" placeholder="Search emails..." class="search-input">
+    <button type="submit" class="btn">Search</button>
+  </form>
+</div>
+
+<!-- Email list -->
+<div class="email-table">
+  {% for e in emails %}
+  <div class="email-item">
+    <div class="email-table-row {% if e.is_unread %}unread{% endif %}" onclick="toggleEmail(this)">
+      <div class="email-table-flags">
+        {% if e.is_important %}<span class="email-important">!</span>{% endif %}
+        {% if e.is_unread %}<span class="email-unread-dot"></span>{% endif %}
+      </div>
+      <div class="email-table-sender">{{ e.sender.split('<')[0] | trim | truncate(25) }}</div>
+      <div class="email-table-content">
+        {% if e.summary %}
+        <span class="email-table-summary">{{ e.summary }}</span>
+        {% else %}
+        <span class="email-table-subject">{{ e.subject }}</span>
+        <span class="email-table-snippet">— {{ e.snippet | truncate(80) }}</span>
+        {% endif %}
+      </div>
+      <div class="email-table-meta">
+        {% if e.action_type == 'reply_needed' %}<span class="action-badge reply">reply</span>
+        {% elif e.action_type == 'action_needed' %}<span class="action-badge action">action</span>
+        {% endif %}
+        {% if e.extracted_event %}<span class="action-badge event">event</span>{% endif %}
+        <span class="email-cat">{{ e.category }}</span>
+        <span class="email-table-date">{{ e.internal_date[5:16] | replace('T', ' ') }}</span>
+      </div>
+    </div>
+    <div class="email-detail" style="display:none" data-id="{{ e.message_id }}">
+      <div class="email-detail-header">
+        <div class="email-detail-from"><strong>From:</strong> {{ e.sender }}</div>
+        <div class="email-detail-to"><strong>To:</strong> {{ e.recipients | truncate(80) }}</div>
+        {% if e.cc %}<div class="email-detail-cc"><strong>Cc:</strong> {{ e.cc | truncate(80) }}</div>{% endif %}
+        <div class="email-detail-subject"><strong>Subject:</strong> {{ e.subject }}</div>
+        <div class="email-detail-date"><strong>Date:</strong> {{ e.internal_date[:19] | replace('T', ' ') }}</div>
+      </div>
+      {% if e.extracted_event %}
+      <div class="email-event-box">
+        <span class="event-icon">cal</span>
+        <span class="event-info">{{ e.extracted_event }}</span>
+      </div>
+      {% endif %}
+      <div class="email-detail-body" id="body-{{ e.message_id }}">
+        {% if e.body %}
+        <div class="full-body">{{ e.body }}</div>
+        {% else %}
+        <p class="email-snippet-text">{{ e.snippet }}</p>
+        {% endif %}
+      </div>
+      <div class="email-detail-actions">
+        {% if e.action_type == 'reply_needed' %}<span class="action-badge reply" style="margin-right:4px">reply needed</span>{% endif %}
+        {% if e.action_type == 'action_needed' %}<span class="action-badge action" style="margin-right:4px">action needed</span>{% endif %}
+        <button class="btn-sm" onclick="event.stopPropagation(); openGmail('{{ e.message_id }}')">Open in Gmail</button>
+        <button class="btn-copy" data-text="{{ e.snippet }}">copy snippet</button>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% if not emails %}
+  <div class="empty">No emails found. Sync via session start.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.email-filters { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+.email-filter-btn {
+  padding: 5px 14px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text2); font-size: 13px; cursor: pointer;
+  text-decoration: none; transition: all .15s;
+}
+.email-filter-btn:hover, .email-filter-btn.active { color: var(--accent); border-color: var(--accent); }
+.filter-count { font-size: 11px; background: var(--surface2); padding: 1px 5px; border-radius: 8px; margin-left: 4px; }
+
+.email-search { margin-bottom: 16px; }
+.email-search form { display: flex; gap: 8px; }
+.search-input {
+  flex: 1; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-size: 14px;
+}
+.search-input:focus { border-color: var(--accent); outline: none; }
+
+.email-item { border-bottom: 1px solid var(--border); }
+.email-item:last-child { border-bottom: none; }
+
+.email-table-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  cursor: pointer; transition: background .1s;
+}
+.email-table-row:hover { background: var(--surface2); }
+.email-table-row.unread { background: var(--surface); }
+.email-table-row.unread .email-table-sender,
+.email-table-row.unread .email-table-subject { font-weight: 600; color: var(--text); }
+.email-table-row.expanded { background: var(--surface2); border-bottom: 1px solid var(--border); }
+
+.email-table-flags { width: 24px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.email-unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+.email-table-sender { width: 140px; font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.email-table-content { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.email-table-subject { font-size: 14px; color: var(--text); }
+.email-table-snippet { font-size: 13px; color: var(--text2); }
+
+.email-table-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 100px; }
+.email-table-date { font-size: 12px; color: var(--text2); white-space: nowrap; }
+
+.email-detail {
+  padding: 16px 20px; background: var(--bg); border-top: 1px solid var(--border);
+}
+.email-detail-header { margin-bottom: 12px; font-size: 13px; color: var(--text2); line-height: 1.6; }
+.email-detail-subject { color: var(--text); }
+.email-detail-body {
+  padding: 12px 0; font-size: 14px; color: var(--text); line-height: 1.7;
+  white-space: pre-wrap; word-break: break-word;
+}
+.email-snippet-text { margin: 0 0 10px; }
+.email-detail-body .full-body { margin-top: 8px; }
+.email-detail-actions { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+
+.action-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 3px; white-space: nowrap;
+}
+.action-badge.reply { background: #388bfd22; color: var(--accent, #388bfd); border: 1px solid #388bfd44; }
+.action-badge.action { background: #f8514922; color: var(--red, #f85149); border: 1px solid #f8514944; }
+.action-badge.event { background: #3fb95022; color: var(--green, #3fb950); border: 1px solid #3fb95044; }
+
+.email-event-box {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px; margin-bottom: 10px;
+  background: #3fb95010; border: 1px solid #3fb95033; border-radius: var(--radius);
+  font-size: 13px; color: var(--green, #3fb950);
+}
+.event-icon { font-weight: 700; font-size: 12px; background: #3fb95022; padding: 2px 6px; border-radius: 3px; }
+.event-info { color: var(--text); }
+</style>
+<script>
+function toggleEmail(row) {
+  const item = row.closest('.email-item');
+  const detail = item.querySelector('.email-detail');
+  const isOpen = detail.style.display !== 'none';
+
+  // Close all others
+  document.querySelectorAll('.email-detail').forEach(d => { d.style.display = 'none'; });
+  document.querySelectorAll('.email-table-row').forEach(r => r.classList.remove('expanded'));
+
+  if (!isOpen) {
+    detail.style.display = 'block';
+    row.classList.add('expanded');
+  }
+}
+
+function openGmail(messageId) {
+  window.open('https://mail.google.com/mail/u/0/#inbox/' + messageId, '_blank');
+}
+
+async function loadFullBody(messageId) {
+  const bodyEl = document.getElementById('body-' + messageId);
+  bodyEl.innerHTML = '<p style="color:var(--text2)">Loading...</p>';
+  try {
+    const res = await fetch('/api/email/' + messageId);
+    if (res.ok) {
+      const data = await res.json();
+      bodyEl.innerHTML = '<div class="full-body">' + (data.body || data.snippet || 'No content') + '</div>';
+    } else {
+      bodyEl.innerHTML = '<p style="color:var(--red)">Failed to load. <a href="#" onclick="event.preventDefault(); openGmail(\'' + messageId + '\')">Open in Gmail</a></p>';
+    }
+  } catch (e) {
+    bodyEl.innerHTML = '<p style="color:var(--red)">Error loading message.</p>';
+  }
+}
+</script>
+{% endblock %}
