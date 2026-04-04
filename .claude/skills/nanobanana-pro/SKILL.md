@@ -77,12 +77,20 @@ python3 .claude/skills/nanobanana-pro/scripts/generate.py "modern minimalist log
 - **Thinking Mode**: Advanced reasoning for complex prompts
 - **SynthID Watermark**: All outputs include invisible watermark
 
+## Output Path (IMPORTANT)
+
+Always save images to `persona/avatar/` with a descriptive filename:
+```
+--output persona/avatar/{descriptive_name}.png
+```
+Example: `--output persona/avatar/summer_outfit.png`
+
 ## Post-Generation (MANDATORY — DO NOT SKIP)
 
 After every successful image generation, you MUST execute these steps:
 
 1. Call `mcp__persona__add_persona_image` with:
-   - `file_path`: the output image path
+   - `file_path`: the output image path (must start with `persona/avatar/`)
    - `label`: short description of the image
    - `image_type`: "avatar" or "scene"
    - `description`: detailed description of what was generated

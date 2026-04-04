@@ -59,12 +59,20 @@ python3 .claude/skills/nanobanana-edit/scripts/edit.py \
 2. **Preserve context**: Add "Keep everything else exactly the same" for targeted edits
 3. **Iterative editing**: Make small changes step by step for complex edits
 
+## Output Path (IMPORTANT)
+
+Always save images to `persona/avatar/` with a descriptive filename:
+```
+--output persona/avatar/{descriptive_name}.png
+```
+Example: `--output persona/avatar/casual_edit.png`
+
 ## Post-Edit (MANDATORY — DO NOT SKIP)
 
 After every successful image edit, you MUST execute these steps:
 
 1. Call `mcp__persona__add_persona_image` with:
-   - `file_path`: the output image path
+   - `file_path`: the output image path (must start with `persona/avatar/`)
    - `label`: short description of the image
    - `image_type`: "avatar" or "scene"
    - `description`: detailed description of what was generated
