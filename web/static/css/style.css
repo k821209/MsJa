@@ -56,11 +56,26 @@ body {
 /* Quick start */
 .quick-start {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
   margin-bottom: 16px;
   border: 1px dashed var(--border);
+}
+.quick-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.quick-help {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+.quick-help b {
+  color: var(--text);
 }
 .btn-quick {
   padding: 6px 14px;
