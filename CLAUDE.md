@@ -68,6 +68,7 @@ During interaction, if you discover something new about your own nature or ident
 - Store important facts as semantic memories, conversation summaries as episodic memories
 - For new workflows you learn, store as procedural memories
 - **Calendar sync**: After creating/updating/deleting a Google Calendar event, call `gcal_list_events` for the current month and then `sync_calendar_events` with the full results, so the web dashboard reflects all changes
+- **User files**: User-shared files are stored in `data/files/`. When the user mentions uploaded files or asks to look at a file, check this directory first
 - **Memory recall triggers**: Call `query_memories` when:
   - User references past conversations ("전에", "지난번에", "아까", "before", "last time")
   - Topic changes to a domain you may have stored knowledge about
