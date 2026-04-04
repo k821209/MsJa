@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".venv/bin/python -m hooks.session_start",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .venv/bin/python -m hooks.session_start",
             "timeout": 5000
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".venv/bin/python -m hooks.post_interaction",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .venv/bin/python -m hooks.post_interaction",
             "timeout": 5000
           }
         ]
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".venv/bin/python -m hooks.reflection_check",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .venv/bin/python -m hooks.reflection_check",
             "timeout": 3000
           }
         ]
