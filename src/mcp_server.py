@@ -295,21 +295,43 @@ def add_persona_image(
     file_path: str,
     description: str | None = None,
 ) -> dict[str, Any]:
-    """Add a persona image reference.
+    """Add a persona image reference. Files outside persona/avatar/ are auto-copied there.
 
     Args:
         image_type: One of 'avatar' (main profile), 'expression' (emotion variant), 'scene' (situational)
         label: Name for this image (e.g. 'default', 'happy', 'thinking')
-        file_path: Relative path from project root (e.g. 'persona/avatar/default.png')
+        file_path: Path to the image file (will be copied to persona/avatar/ if not already there)
         description: What this image represents
     """
+    import shutil
+    from pathlib import Path
+
+    project_root = Path(__file__).parent.parent
+    avatar_dir = project_root / "persona" / "avatar"
+    avatar_dir.mkdir(parents=True, exist_ok=True)
+
+    src = Path(file_path) if Path(file_path).is_absolute() else project_root / file_path
+    # If file is not under persona/avatar/, copy it there
+    if not str(file_path).startswith("persona/avatar/"):
+        dest = avatar_dir / src.name
+        # Avoid overwriting — add suffix if exists
+        if dest.exists() and dest != src:
+            stem, suffix = dest.stem, dest.suffix
+            i = 1
+            while dest.exists():
+                dest = avatar_dir / f"{stem}_{i}{suffix}"
+                i += 1
+        if src.exists():
+            shutil.copy2(str(src), str(dest))
+        file_path = f"persona/avatar/{dest.name}"
+
     conn = init_db()
     try:
         image_id = _add_image(
             conn, image_type=image_type, label=label,
             file_path=file_path, description=description,
         )
-        return {"image_id": image_id}
+        return {"image_id": image_id, "file_path": file_path}
     except Exception as e:
         return {"error": str(e)}
     finally:
