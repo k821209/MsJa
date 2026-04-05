@@ -139,11 +139,13 @@ async def page_dashboard(request: Request):
             todos = [dict(r) for r in rows]
         except Exception:
             pass
-        # Today's schedule
+        # Today + tomorrow schedule
         from datetime import datetime, timedelta
         today_str = datetime.now().strftime("%Y-%m-%d")
         tomorrow_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        day_after_str = (datetime.now() + timedelta(days=2)).strftime("%Y-%m-%d")
         today_events = []
+        tomorrow_events = []
         try:
             rows = conn.execute(
                 """SELECT * FROM calendar_events
@@ -152,6 +154,13 @@ async def page_dashboard(request: Request):
                 (tomorrow_str, today_str),
             ).fetchall()
             today_events = [dict(r) for r in rows]
+            rows2 = conn.execute(
+                """SELECT * FROM calendar_events
+                   WHERE start_time < ? AND end_time > ? AND status != 'cancelled'
+                   ORDER BY start_time""",
+                (day_after_str, tomorrow_str),
+            ).fetchall()
+            tomorrow_events = [dict(r) for r in rows2]
         except Exception:
             pass
         return templates.TemplateResponse(request=request, name="dashboard.html", context={
@@ -164,6 +173,8 @@ async def page_dashboard(request: Request):
             "email_summary": email_summary,
             "todos": todos,
             "today_events": today_events,
+            "tomorrow_events": tomorrow_events,
+            "tomorrow_str": tomorrow_str,
         })
     finally:
         conn.close()

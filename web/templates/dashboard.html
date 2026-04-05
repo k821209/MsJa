@@ -34,9 +34,10 @@
     <div class="persona-name">{{ state.persona_name }}</div>
   </div>
 
-  <!-- Today's Schedule -->
+  <!-- Schedule: Today + Tomorrow -->
   <div class="card">
-    <h2>Today <a href="calendar" class="link-more">calendar &rarr;</a></h2>
+    <h2>Schedule <a href="calendar" class="link-more">calendar &rarr;</a></h2>
+    <h3 class="schedule-day">Today</h3>
     {% if today_events %}
     <div class="today-list">
       {% for e in today_events %}
@@ -49,6 +50,20 @@
     </div>
     {% else %}
     <div class="empty">No events today.</div>
+    {% endif %}
+    <h3 class="schedule-day">Tomorrow ({{ tomorrow_str[5:] }})</h3>
+    {% if tomorrow_events %}
+    <div class="today-list">
+      {% for e in tomorrow_events %}
+      <div class="today-row">
+        <span class="today-time">{% if e.all_day %}all day{% else %}{{ e.start_time[11:16] }}{% endif %}</span>
+        <span class="today-title">{{ e.summary }}</span>
+        {% if e.location %}<span class="today-location">{{ e.location | truncate(30) }}</span>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">No events tomorrow.</div>
     {% endif %}
   </div>
 
@@ -184,6 +199,8 @@
 <style>
 .today-list, .todo-list { display: flex; flex-direction: column; gap: 6px; }
 .today-row, .todo-row { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+.schedule-day { font-size: 0.85rem; color: var(--text2); margin: 10px 0 4px; font-weight: 600; }
+.schedule-day:first-of-type { margin-top: 0; }
 .today-time { min-width: 50px; color: var(--accent); font-weight: 600; font-size: 0.8rem; }
 .today-title { flex: 1; }
 .today-location { color: var(--text2); font-size: 0.75rem; }
