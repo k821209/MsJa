@@ -130,6 +130,30 @@ async def page_dashboard(request: Request):
             email_summary["recent"] = [dict(r) for r in recent]
         except Exception:
             pass
+        # Todos
+        todos = []
+        try:
+            rows = conn.execute(
+                "SELECT * FROM todos WHERE status != 'done' ORDER BY CASE priority WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 WHEN 'medium' THEN 2 ELSE 3 END, created_at DESC LIMIT 10"
+            ).fetchall()
+            todos = [dict(r) for r in rows]
+        except Exception:
+            pass
+        # Today's schedule
+        from datetime import datetime, timedelta
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        tomorrow_str = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+        today_events = []
+        try:
+            rows = conn.execute(
+                """SELECT * FROM calendar_events
+                   WHERE start_time < ? AND end_time > ? AND status != 'cancelled'
+                   ORDER BY start_time""",
+                (tomorrow_str, today_str),
+            ).fetchall()
+            today_events = [dict(r) for r in rows]
+        except Exception:
+            pass
         return templates.TemplateResponse(request=request, name="dashboard.html", context={
             "request": request,
             "state": state,
@@ -138,6 +162,8 @@ async def page_dashboard(request: Request):
             "reflections": reflections,
             "memory_stats": memory_stats,
             "email_summary": email_summary,
+            "todos": todos,
+            "today_events": today_events,
         })
     finally:
         conn.close()
