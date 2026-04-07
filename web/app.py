@@ -900,6 +900,8 @@ async def ws_terminal(websocket: WebSocket):
     env = os.environ.copy()
     env["TERM"] = "xterm-256color"
     env["COLORTERM"] = "truecolor"
+    env["LANG"] = "en_US.UTF-8"
+    env["LC_ALL"] = "en_US.UTF-8"
 
     pid = os.fork()
     if pid == 0:

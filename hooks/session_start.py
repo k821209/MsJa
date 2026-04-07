@@ -145,12 +145,16 @@ def main():
         # Check if reflection is due
         if should_trigger_reflection(conn):
             summary = get_signal_summary(conn)
-            lines.append("")
-            lines.append(
-                f"[⚡ REFLECTION DUE: {summary['count']} unconsumed signals "
-                f"(magnitude {summary['total_magnitude']:.1f}). "
-                f"Run trigger_reflection → analyze prompt → apply_reflection to evolve persona.]"
+            reflection_notice = (
+                f"⚡ Reflection threshold reached! "
+                f"{summary['count']} signals with total magnitude {summary['total_magnitude']:.1f}. "
+                f"Run reflection cycle NOW before greeting the user."
             )
+            # Insert reflection notice right after the banner so it's not missed
+            lines.insert(0, "")
+            lines.insert(0, f"[CRITICAL: {reflection_notice}]")
+            lines.append("")
+            lines.append(f"[{reflection_notice}]")
 
         output = {
             "additionalContext": "\n".join(lines)
