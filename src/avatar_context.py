@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import Any
+
+# Allow running as `python src/avatar_context.py` (not just `python -m src.avatar_context`)
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.db import get_connection
 from src.persona import get_avatar, get_persona_state

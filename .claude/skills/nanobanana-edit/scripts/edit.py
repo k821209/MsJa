@@ -117,7 +117,14 @@ def edit_image(input_path: str, prompt: str, aspect_ratio: str = None,
         data = response.json()
 
         if "candidates" in data:
-            for part in data["candidates"][0]["content"]["parts"]:
+            candidate = data["candidates"][0]
+            if "content" not in candidate or "parts" not in candidate.get("content", {}):
+                print(f"Candidate has no content/parts. Candidate keys: {list(candidate.keys())}")
+                if "finishReason" in candidate:
+                    print(f"Finish reason: {candidate['finishReason']}")
+                print(json.dumps(candidate, indent=2)[:500])
+                return False
+            for part in candidate["content"]["parts"]:
                 if "inlineData" in part:
                     img_data = base64.b64decode(part["inlineData"]["data"])
                     output_file = Path(output_path)

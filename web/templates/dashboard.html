@@ -29,10 +29,17 @@
   <div class="card avatar-card">
     {% if state.avatar %}
     <img src="/persona/{{ state.avatar | replace('persona/', '') }}" alt="avatar" class="avatar-img"
-         onerror="this.style.display='none'">
+         onerror="this.style.display='none'" onclick="document.getElementById('avatar-modal').style.display='flex'" style="cursor:pointer">
     {% endif %}
     <div class="persona-name">{{ state.persona_name }}</div>
   </div>
+
+  <!-- Avatar Modal -->
+  {% if state.avatar %}
+  <div id="avatar-modal" class="avatar-modal" onclick="this.style.display='none'">
+    <img src="/persona/{{ state.avatar | replace('persona/', '') }}" alt="avatar full" class="avatar-modal-img">
+  </div>
+  {% endif %}
 
   <!-- Schedule: Today + Tomorrow -->
   <div class="card">
@@ -211,5 +218,8 @@
 .priority-low { background: var(--surface2); color: var(--text2); opacity: 0.6; }
 .todo-title { flex: 1; }
 .todo-due { color: var(--text2); font-size: 0.75rem; }
+/* Avatar modal */
+.avatar-modal { display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; cursor: pointer; }
+.avatar-modal-img { max-height: 90vh; max-width: 90vw; border-radius: var(--radius); object-fit: contain; }
 </style>
 {% endblock %}
